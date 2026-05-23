@@ -1,0 +1,189 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "Roboto Mono", monospace;
+
+  /* Bloomberg / Signalist Dark Mode Palette */
+  --color-gray-900: #0A0A0A; /* Page background */
+  --color-gray-800: #111111; /* Card background */
+  --color-gray-700: #161616; /* Elevated card background */
+  --color-gray-600: #1E1E1E; /* Card border */
+  --color-gray-500: #888888; /* Secondary text */
+  --color-gray-400: #FFFFFF; /* Primary text */
+  --color-gray-300: #CCCCCC;
+  --color-gray-200: #EAEAEA;
+  --color-primary-500: #2962FF; /* Accent Blue */
+  --color-primary-400: #2962FF;
+  --color-green-500: #00C853; /* Profit Green */
+  --color-red-500: #FF3B30; /* Loss Red */
+  --color-border: #1E1E1E;
+  --color-ring: #2962FF;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/30;
+  }
+  body {
+    @apply bg-gray-900 text-white font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .container {
+    @apply mx-auto max-w-screen-2xl px-4 md:px-6 lg:px-8;
+  }
+
+  .primary-btn {
+    @apply h-10 px-4 cursor-pointer bg-primary-500 hover:bg-primary-500/90 text-white font-medium text-sm
+      rounded-md shadow-sm transition-all duration-150 disabled:opacity-50 flex items-center justify-center;
+  }
+
+  .secondary-btn {
+    @apply h-10 px-4 cursor-pointer bg-transparent hover:bg-gray-700 border border-gray-600
+      text-gray-300 hover:text-white font-medium text-sm rounded-md transition-all duration-150 flex items-center justify-center;
+  }
+
+  .dashboard-card {
+    @apply bg-gray-800 border border-gray-600 rounded-lg p-5 shadow-sm;
+  }
+
+  .form-input {
+    @apply h-10 px-4 py-2 text-white text-sm placeholder:text-gray-500
+      border border-gray-600 bg-gray-800 rounded-md focus:border-primary-500
+      focus:ring-0 focus:outline-none w-full;
+  }
+
+  .search-input {
+    @apply bg-gray-800 border border-gray-600 text-gray-200
+      placeholder:text-gray-500 rounded-md h-10 px-4 text-sm
+      focus:border-primary-500 focus:ring-0 focus:outline-none;
+  }
+
+  .watchlist-table {
+    @apply w-full overflow-hidden bg-gray-800 border border-gray-600 rounded-lg;
+  }
+
+  .table-header-row {
+    @apply bg-transparent border-b border-gray-600 text-gray-500 font-mono;
+  }
+
+  .table-row {
+    @apply border-b border-gray-600/30 text-gray-300
+      hover:bg-gray-700 transition-colors;
+  }
+
+  .profit-text {
+    @apply text-green-500 font-semibold font-mono;
+  }
+  .loss-text {
+    @apply text-red-500 font-semibold font-mono;
+  }
+
+  .watchlist-btn {
+    @apply bg-primary-500 hover:bg-primary-500/90 text-white w-full
+      rounded-md h-9 font-medium text-xs transition-all duration-150 cursor-pointer flex items-center justify-center;
+  }
+
+  .icon-btn {
+    @apply w-9 h-9 rounded-full flex items-center justify-center
+      bg-gray-700/60 hover:bg-primary-500/20 text-gray-300
+      hover:text-primary-400 transition-all duration-150;
+  }
+
+  .news-item {
+    @apply bg-gray-800 rounded-lg border border-gray-600 p-5
+      hover:border-primary-500/40 hover:bg-gray-700/30 transition-all duration-150 cursor-pointer;
+  }
+
+  .news-tag {
+    @apply inline-block px-2 py-0.5 rounded bg-primary-500/10
+      text-primary-400 text-xs font-semibold uppercase tracking-wider;
+  }
+
+  .news-title {
+    @apply text-base font-semibold text-white leading-snug mb-2;
+  }
+  .news-summary {
+    @apply text-gray-500 text-sm leading-relaxed;
+  }
+}
+
+/* Global Tables Styling (Signalist / Bloomberg style) */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  border: none;
+}
+
+thead {
+  background-color: transparent;
+  border-bottom: 1px solid #222222;
+}
+
+th {
+  font-size: 11px;
+  font-weight: 500;
+  color: #555555;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 16px;
+  height: 36px;
+  text-align: left;
+  border: none;
+}
+
+td {
+  font-size: 13px;
+  color: #CCCCCC;
+  padding: 0 16px;
+  height: 48px;
+  border: none;
+}
+
+tr {
+  border-bottom: 1px solid #111111;
+}
+
+tr:hover {
+  background-color: #161616;
+  transition: background-color 0.1s ease;
+}
+
+/* Global Scrollbar Overrides */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #444444;
+}
+
+/* Custom Bloomberg-style Ticker & Widget Skins */
+.tradingview-widget-container {
+  background-color: #111111 !important;
+  border: 1px solid #1E1E1E !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+.tradingview-widget-container.ticker-tape-container {
+  background-color: #0A0A0A !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+  border-bottom: 1px solid #1A1A1A !important;
+  border-radius: 0px !important;
+}
+.tradingview-widget-container iframe {
+  width: 100% !important;
+  background-color: transparent !important;
+}

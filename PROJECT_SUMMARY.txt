@@ -1,0 +1,234 @@
+================================================================================
+TRADEX — FINAL PROJECT SUMMARY
+================================================================================
+Generated: Phase 1–11 complete (per provided specification)
+Stack: React 19 + Vite 6 + Tailwind CSS 4 + Supabase + Finnhub + Recharts + TradingView widgets
+
+================================================================================
+1. FOLDER STRUCTURE
+================================================================================
+
+TradeX/
+├── .env                    # Local secrets (gitignored) — copy from .env.example
+├── .env.example            # Template for required env vars
+├── .gitignore
+├── README.md               # Quick start & deploy
+├── PROJECT_SUMMARY.txt     # This file
+├── index.html
+├── package.json
+├── vite.config.js
+├── public/
+│   └── vite.svg
+├── supabase/               # Run manually in Supabase SQL Editor
+│   ├── README.md
+│   ├── phase5-schema.sql
+│   ├── fix-user-trigger.sql
+│   ├── phase10-leaderboard.sql
+│   └── phase11-admin-rpc.sql
+└── src/
+    ├── main.jsx
+    ├── App.jsx             # React Router (public / user / admin)
+    ├── index.css           # Tailwind + design system utilities
+    ├── data/
+    │   └── stocks.js       # 100 US stocks (binary search)
+    ├── lib/
+    │   ├── supabase.js
+    │   ├── finnhub.js
+    │   ├── dsa.js
+    │   ├── marketHours.js
+    │   ├── trading.js      # Buy/sell execution
+    │   ├── admin.js        # Admin actions + logging
+    │   └── tradingviewEmbed.js
+    ├── hooks/
+    │   ├── useAuth.js
+    │   ├── useFinnhub.js
+    │   ├── useFinnhubSocket.js
+    │   ├── usePortfolio.js
+    │   ├── useAlerts.js
+    │   └── useTransactions.js
+    ├── components/
+    │   ├── layout/
+    │   │   ├── Navbar.jsx
+    │   │   ├── TickerTape.jsx
+    │   │   ├── Layout.jsx
+    │   │   ├── ProtectedRoute.jsx
+    │   │   ├── AdminRoute.jsx
+    │   │   └── BannedScreen.jsx
+    │   ├── ui/
+    │   │   ├── StockCard.jsx, StatCard.jsx, PriceTag.jsx, Badge.jsx
+    │   │   ├── LoadingSpinner.jsx, EmptyState.jsx, PageState.jsx
+    │   ├── charts/
+    │   │   ├── PortfolioPie.jsx, PnLArea.jsx, LeaderboardBar.jsx
+    │   ├── trading/
+    │   │   └── BuySellModal.jsx
+    │   └── tradingview/
+    │       ├── AdvancedChart.jsx, MarketOverview.jsx
+    │       ├── Heatmap.jsx, SymbolInfo.jsx
+    └── pages/
+        ├── Landing.jsx, Login.jsx
+        ├── user/
+        │   ├── Dashboard.jsx, Search.jsx, Portfolio.jsx, Watchlist.jsx
+        │   ├── Alerts.jsx, History.jsx, Wallet.jsx, Leaderboard.jsx
+        │   └── StockDetail.jsx
+        └── admin/
+            ├── AdminDashboard.jsx, AdminUsers.jsx, AdminWallet.jsx
+            ├── AdminAnalytics.jsx, AdminLogs.jsx
+
+================================================================================
+2. COMPLETED FEATURES (PHASES 1–11)
+================================================================================
+
+PHASE 1 — Project setup
+  - Vite + React, dependencies, Tailwind v4, .env, .gitignore
+
+PHASE 2 — Folder structure
+  - Full src tree (components, pages, hooks, lib)
+
+PHASE 3 — Design system
+  - Custom @theme colors, utility classes (buttons, tables, cards, news)
+
+PHASE 4 — Core libraries
+  - Supabase client, Finnhub API + caches, market hours, DSA structures
+
+PHASE 5 — Database (SQL provided)
+  - wallets, portfolios, transactions, watchlist, alerts, fund_requests, admin_logs
+  - RLS, new-user trigger ($10k wallet + metadata)
+
+PHASE 6 — Routing
+  - Public / user (protected) / admin routes with Layout
+
+PHASE 7 — Layout
+  - Navbar (nav, more menu, alerts badge, avatar, mobile menu)
+  - TickerTape (TradingView)
+  - ProtectedRoute (auth, banned screen), AdminRoute
+
+PHASE 8 — TradingView widgets
+  - AdvancedChart, MarketOverview, Heatmap, SymbolInfo
+
+PHASE 9 — Hooks
+  - useAuth, useFinnhub, useFinnhubSocket, usePortfolio, useAlerts, useTransactions
+
+PHASE 10 — User pages
+  - Dashboard, Search, Portfolio (buy/sell), Watchlist (live WS), Alerts
+  - History (undo, CSV), Wallet (fund requests), Leaderboard, StockDetail
+
+PHASE 11 — Admin pages
+  - Dashboard stats, user management, fund approvals, analytics, audit logs
+
+================================================================================
+3. MISSING / TODO (NOT IN PROVIDED SPEC)
+================================================================================
+
+[ ] Phase 12+ — Not provided (e.g. rich marketing Landing page)
+[ ] Profile / Settings pages (Navbar links go to /dashboard placeholder)
+[ ] 404 Not Found route
+[ ] Email verification flow UI
+[ ] Password reset page
+[ ] Automated tests (unit / e2e)
+[ ] ESLint / Prettier config
+[ ] CI/CD pipeline
+[ ] Server-side Finnhub proxy (hide API key — optional hardening)
+[ ] Real-time alert push notifications (browser/email)
+[ ] Weighted portfolio analytics beyond basic P&L
+[ ] Email display on leaderboard (privacy consideration)
+
+================================================================================
+4. KNOWN BUGS & INCOMPLETE MODULES
+================================================================================
+
+TRADINGVIEW WIDGETS
+  - Fixed: removed script.async to avoid querySelector null errors
+  - May still flash/reload on React Strict Mode double-mount in dev
+  - Depends on third-party CDN (s3.tradingview.com) — offline = broken widgets
+  - Multiple widgets on Dashboard can be slow or rate-limited by TradingView
+
+FINNHUB
+  - Free tier rate limits — many symbols / fast polling may fail
+  - useFinnhub skips polling when market closed (no live updates after hours)
+  - WebSocket max 50 symbols; symbol format may need exchange prefix for some tickers
+  - BRK.B and similar symbols may need different Finnhub symbol format
+
+SUPABASE / AUTH
+  - Admin actions on auth.users require RPC (phase11-admin-rpc.sql) — must be run
+  - User must re-login after role/metadata changes
+  - Google OAuth requires manual setup in Supabase dashboard
+  - Delete user via admin is irreversible
+
+TRADING LOGIC
+  - Paper trading only; no order slippage/fees
+  - is_frozen checked in BuySellModal only (not all code paths)
+  - History realized P&L uses simplified avg buy (not FIFO lot matching)
+  - undoLast reverses last DB transaction; edge cases if portfolio manually edited
+
+LEADERBOARD
+  - Requires phase10-leaderboard.sql RPC
+  - Portfolio value uses live Finnhub prices when available
+
+UI / UX
+  - Landing page is minimal (title + CTA only)
+  - Large JS bundle (~960KB) — no code splitting
+  - No global React Error Boundary
+
+================================================================================
+5. PRODUCTION READINESS
+================================================================================
+
+VERDICT: NOT fully production-ready without additional DevOps and configuration.
+         Suitable for DEMO / COURSE / PORTFOLIO with Supabase + env configured.
+
+READY:
+  [x] Production build works (npm run build)
+  [x] Env-based config (Vite VITE_* vars)
+  [x] .gitignore excludes secrets and dist
+  [x] .env.example documented
+  [x] RLS enabled on Supabase tables
+  [x] Admin gated by role + RPC
+
+REQUIRED BEFORE PRODUCTION DEPLOY:
+  [ ] Run all supabase/*.sql on production Supabase project
+  [ ] Set production env vars on host (never commit .env)
+  [ ] Supabase Auth → Site URL + Redirect URLs for production domain
+  [ ] Enable Email provider (and Google if used) in Supabase
+  [ ] Confirm RLS policies tested for user + admin
+  [ ] Create at least one admin user (metadata SQL + re-login)
+  [ ] Finnhub production API key with adequate quota
+  [ ] Deploy dist/ to static host (Vercel, Netlify, Cloudflare Pages, etc.)
+
+RECOMMENDED HARDENING:
+  [ ] Add 404 page and catch-all route
+  [ ] Add Error Boundary component
+  [ ] Code-split routes (React.lazy) to reduce bundle size
+  [ ] Finnhub proxy via Supabase Edge Function (hide VITE_FINNHUB_KEY)
+  [ ] Rate limiting / CAPTCHA on auth (Supabase settings)
+  [ ] Monitoring (Sentry) and analytics
+  [ ] HTTPS only (host default)
+  [ ] Content Security Policy for TradingView scripts
+  [ ] Automated DB backups (Supabase dashboard)
+
+SECURITY NOTES:
+  - VITE_SUPABASE_ANON_KEY and VITE_FINNHUB_KEY are visible in browser bundle
+  - This is normal for Supabase anon key (RLS protects data)
+  - Finnhub key in client is a known limitation — use backend proxy for strict production
+  - Never expose Supabase service_role key in frontend
+
+================================================================================
+6. SUPABASE SQL CHECKLIST (YOUR SIDE)
+================================================================================
+
+Run in order:
+  1. phase5-schema.sql
+  2. fix-user-trigger.sql (if signup errors occurred)
+  3. phase10-leaderboard.sql
+  4. phase11-admin-rpc.sql
+
+================================================================================
+7. NPM SCRIPTS
+================================================================================
+
+  npm run dev      → http://localhost:5173
+  npm run build    → output to dist/
+  npm run preview  → preview production build locally
+
+================================================================================
+END OF SUMMARY
+================================================================================
