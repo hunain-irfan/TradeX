@@ -1,27 +1,55 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import Logo from '../components/layout/Logo'
+
+function isEmailNotConfirmed(err) {
+  const msg = err?.message?.toLowerCase() ?? ''
+  return msg.includes('email not confirmed') || msg.includes('not confirmed')
+}
 
 export default function Login() {
-  const { signIn, signUp, signInWithGoogle } = useAuth()
+  const { signIn, signUp, session, loading: authLoading } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [isRegister, setIsRegister] = useState(false)
+  const [isRegister, setIsRegister] = useState(Boolean(location.state?.register))
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!authLoading && session) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [authLoading, session, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
-    const { error: err } = isRegister
-      ? await signUp(email, password)
-      : await signIn(email, password)
-
-    if (err) setError(err.message)
-    else navigate('/dashboard')
+    if (isRegister) {
+      const { data, error: err } = await signUp(email.trim(), password)
+      if (err) {
+        setError(err.message)
+      } else if (data?.user && !data?.session) {
+        navigate('/verify-email', { state: { email: email.trim() } })
+      } else {
+        navigate('/dashboard')
+      }
+    } else {
+      const { error: err } = await signIn(email.trim(), password)
+      if (err) {
+        if (isEmailNotConfirmed(err)) {
+          setError('Please confirm your email first. Check your inbox or resend the link below.')
+        } else {
+          setError(err.message)
+        }
+      } else {
+        navigate('/dashboard')
+      }
+    }
 
     setLoading(false)
   }
@@ -29,7 +57,9 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
       <div className="dashboard-card w-full max-w-md">
-        <h1 className="text-2xl font-bold text-primary-400 mb-1">TradeX</h1>
+        <div className="flex justify-center mb-4">
+          <Logo to="/" link={false} className="h-9 w-auto max-w-[180px]" />
+        </div>
         <p className="text-gray-500 text-sm mb-6">
           {isRegister ? 'Create your account' : 'Sign in to your account'}
         </p>
@@ -58,12 +88,35 @@ export default function Login() {
           </button>
         </form>
 
+        {!isRegister && (
+          <p className="text-center mt-3">
+            <Link to="/forgot-password" className="text-primary-400 text-sm hover:underline">
+              Forgot password?
+            </Link>
+          </p>
+        )}
+
+        {error && isRegister === false && error.includes('confirm') && (
+          <p className="text-center mt-2">
+            <Link
+              to="/verify-email"
+              state={{ email: email.trim() }}
+              className="text-primary-400 text-sm hover:underline"
+            >
+              Resend confirmation email
+            </Link>
+          </p>
+        )}
+
         <p className="text-gray-500 text-sm text-center mt-4">
           {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button
             type="button"
             className="text-primary-400 hover:underline"
-            onClick={() => setIsRegister((r) => !r)}
+            onClick={() => {
+              setIsRegister((r) => !r)
+              setError(null)
+            }}
           >
             {isRegister ? 'Sign In' : 'Sign Up'}
           </button>

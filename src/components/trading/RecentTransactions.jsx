@@ -1,14 +1,14 @@
-import React from 'react';
+import StockSymbolCell from '../ui/StockSymbolCell'
 
 export default function RecentTransactions({ transactions }) {
-  // Get top 8 recent transactions
-  const recent = transactions?.slice(0, 8) || [];
+  const recent = transactions?.slice(0, 8) || []
 
   return (
     <div className="bg-[#111111] border border-[#1E1E1E] rounded-lg overflow-hidden flex flex-col h-[500px]">
-      <div className="px-[20px] py-[16px] border-b border-[#1E1E1E] flex items-center justify-between">
-        <h2 className="text-[14px] font-medium text-white font-sans tracking-tight">Recent Transactions</h2>
-        <span className="text-[#888888] text-[11px] uppercase tracking-wider font-mono">History</span>
+      <div className="px-5 pt-5 pb-4 border-b border-[#1E1E1E]">
+        <h3 className="text-[#888888] uppercase tracking-wider text-xs font-semibold font-mono">
+          Recent Transactions
+        </h3>
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -29,19 +29,28 @@ export default function RecentTransactions({ transactions }) {
               {recent.map((tx) => (
                 <tr key={tx.id} className="hover:bg-[#161616] transition-colors">
                   <td className="px-4 py-3">
-                    <div className="flex flex-col">
-                      <span className="text-white font-semibold text-[13px]">{tx.stock_symbol}</span>
-                      <span className="text-[#555555] text-[11px]">
-                        {tx.stock_name && tx.stock_name !== tx.stock_symbol ? `${tx.stock_name} • ` : ''}
-                        {new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    <div className="flex items-center justify-between gap-2">
+                      <StockSymbolCell
+                        symbol={tx.stock_symbol}
+                        name={tx.stock_name}
+                        showName={!!tx.stock_name && tx.stock_name !== tx.stock_symbol}
+                      />
+                      <span className="text-[#555555] text-[11px] font-mono shrink-0">
+                        {new Date(tx.created_at).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
                       </span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium uppercase tracking-wider font-mono ${tx.action === 'BUY'
-                        ? 'bg-[rgba(0,200,83,0.1)] text-[#00C853] border border-[#00C853]'
-                        : 'bg-[rgba(255,59,48,0.1)] text-[#FF3B30] border border-[#FF3B30]'
-                      }`}>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium uppercase tracking-wider font-mono ${
+                        tx.action === 'BUY'
+                          ? 'bg-[rgba(0,200,83,0.1)] text-[#00C853] border border-[#00C853]'
+                          : 'bg-[rgba(255,59,48,0.1)] text-[#FF3B30] border border-[#FF3B30]'
+                      }`}
+                    >
                       {tx.action}
                     </span>
                   </td>
@@ -58,5 +67,5 @@ export default function RecentTransactions({ transactions }) {
         )}
       </div>
     </div>
-  );
+  )
 }

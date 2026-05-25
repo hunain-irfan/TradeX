@@ -19,7 +19,7 @@ function FinancialNews() {
         "isTransparent": true,
         "displayMode": "regular",
         "width": "100%",
-        "height": "100%",
+        "height": "547",
         "colorTheme": "dark",
         "locale": "en"
       }`;
@@ -29,7 +29,11 @@ function FinancialNews() {
   }, []);
 
   return (
-    <div className="tradingview-widget-container" ref={container} style={{ width: '100%', height: '100%' }}>
+    <div
+      className="tradingview-widget-container tv-financial-news"
+      ref={container}
+      style={{ width: '100%', height: 547}}
+    >
     </div>
   );
 }

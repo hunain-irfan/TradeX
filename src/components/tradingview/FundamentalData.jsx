@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { mountTradingViewWidget, toTradingViewSymbol } from '../../lib/tradingviewEmbed'
 
-const SYMBOL_SCRIPT =
-  'https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js'
+const FINANCIALS_SCRIPT =
+  'https://s3.tradingview.com/external-embedding/embed-widget-financials.js'
 
-export default function SymbolInfo({ symbol, height = 185 }) {
+export default function FundamentalData({ symbol, height = 360 }) {
   const containerRef = useRef(null)
   const tvSymbol = toTradingViewSymbol(symbol)
 
@@ -19,13 +19,16 @@ export default function SymbolInfo({ symbol, height = 185 }) {
       symbol: tvSymbol,
       colorTheme: 'dark',
       isTransparent: true,
-      locale: 'en',
+      largeChartUrl: '',
+      displayMode: 'regular',
       width: '100%',
+      height: '100%',
+      locale: 'en',
     }
 
     const frameId = requestAnimationFrame(() => {
       if (cancelled) return
-      cleanup = mountTradingViewWidget(container, SYMBOL_SCRIPT, config)
+      cleanup = mountTradingViewWidget(container, FINANCIALS_SCRIPT, config)
     })
 
     return () => {
@@ -38,8 +41,8 @@ export default function SymbolInfo({ symbol, height = 185 }) {
   return (
     <div
       ref={containerRef}
-      className="tradingview-widget-container tv-hide-copyright tv-symbol-info-compact w-full"
-      style={{ '--symbol-info-h': `${height}px` }}
+      className="tradingview-widget-container tv-hide-copyright w-full"
+      style={{ height: `${height}px`, minHeight: `${height}px` }}
     />
   )
 }

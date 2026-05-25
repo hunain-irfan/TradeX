@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { usePortfolio } from '../../hooks/usePortfolio'
 import { useFinnhub } from '../../hooks/useFinnhub'
@@ -7,6 +6,7 @@ import { sortByField } from '../../lib/dsa'
 import BuySellModal from '../../components/trading/BuySellModal'
 import PnLArea from '../../components/charts/PnLArea'
 import { useTransactions } from '../../hooks/useTransactions'
+import StockSymbolCell from '../../components/ui/StockSymbolCell'
 import { PageLoader, PageError, EmptyState } from '../../components/ui/PageState'
 
 export default function Portfolio() {
@@ -119,23 +119,22 @@ export default function Portfolio() {
       {/* Holdings Bloomberg style table */}
       <div className="bg-[#111111] border border-[#1E1E1E] rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="holdings-table w-full">
             <thead>
               <tr className="border-b border-[#222222]">
-                <th className="py-3 px-4 font-mono text-[11px] text-[#555555] uppercase text-left">Symbol</th>
-                <th className="py-3 px-4 font-mono text-[11px] text-[#555555] uppercase text-left">Name</th>
-                <th className="py-3 px-4 font-mono text-[11px] text-[#555555] uppercase text-right">Qty</th>
-                <th className="py-3 px-4 font-mono text-[11px] text-[#555555] uppercase text-right">Avg Buy</th>
-                <th className="py-3 px-4 font-mono text-[11px] text-[#555555] uppercase text-right">Current</th>
-                <th className="py-3 px-4 font-mono text-[11px] text-[#555555] uppercase text-right">P&L</th>
-                <th className="py-3 px-4 font-mono text-[11px] text-[#555555] uppercase text-right">P&L%</th>
-                <th className="py-3 px-4 font-mono text-[11px] text-[#555555] uppercase text-center">Actions</th>
+                <th className="py-3 px-4 font-mono text-[11px] text-[#555555] uppercase !text-left">Stock</th>
+                <th className="py-3 px-4 font-mono text-[11px] text-[#555555] uppercase !text-right">Qty</th>
+                <th className="py-3 px-4 font-mono text-[11px] text-[#555555] uppercase !text-right">Avg Buy</th>
+                <th className="py-3 px-4 font-mono text-[11px] text-[#555555] uppercase !text-right">Current</th>
+                <th className="py-3 px-4 font-mono text-[11px] text-[#555555] uppercase !text-right">P&L</th>
+                <th className="py-3 px-4 font-mono text-[11px] text-[#555555] uppercase !text-right">P&L%</th>
+                <th className="py-3 px-4 font-mono text-[11px] text-[#555555] uppercase !text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {sorted.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="py-8 border-none">
+                  <td colSpan="7" className="py-8 border-none">
                     <EmptyState title="No holdings" message="Search stocks and buy shares to build your portfolio." />
                   </td>
                 </tr>
@@ -143,30 +142,28 @@ export default function Portfolio() {
                 sorted.map((h) => (
                   <tr key={h.symbol} className="border-b border-[#111111]/30 hover:bg-[#161616] h-[52px]">
                     <td className="py-3 px-4">
-                      <Link to={`/stock/${h.symbol}`} className="text-[#2962FF] font-semibold hover:underline font-mono text-sm">
-                        {h.symbol}
-                      </Link>
+                      <StockSymbolCell
+                        symbol={h.symbol}
+                        name={h.stock_name}
+                      />
                     </td>
-                    <td className="py-3 px-4 truncate max-w-[160px] text-gray-300 font-medium">
-                      {h.stock_name}
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono text-sm text-white">
+                    <td className="py-3 px-4 !text-right font-mono text-sm text-white whitespace-nowrap">
                       {h.quantity}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono text-sm text-gray-300">
+                    <td className="py-3 px-4 !text-right font-mono text-sm text-gray-300 whitespace-nowrap">
                       ${Number(h.buy_price).toFixed(2)}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono text-sm text-white">
+                    <td className="py-3 px-4 !text-right font-mono text-sm text-white whitespace-nowrap">
                       ${h.current.toFixed(2)}
                     </td>
-                    <td className={`py-3 px-4 text-right font-mono text-sm font-semibold ${h.pnl >= 0 ? 'text-[#00C853]' : 'text-[#FF3B30]'}`}>
+                    <td className={`py-3 px-4 !text-right font-mono text-sm font-semibold whitespace-nowrap ${h.pnl >= 0 ? 'text-[#00C853]' : 'text-[#FF3B30]'}`}>
                       {h.pnl >= 0 ? '▲ ' : '▼ '}${Math.abs(h.pnl).toFixed(2)}
                     </td>
-                    <td className={`py-3 px-4 text-right font-mono text-sm font-semibold ${h.pnlPct >= 0 ? 'text-[#00C853]' : 'text-[#FF3B30]'}`}>
+                    <td className={`py-3 px-4 !text-right font-mono text-sm font-semibold whitespace-nowrap ${h.pnlPct >= 0 ? 'text-[#00C853]' : 'text-[#FF3B30]'}`}>
                       {h.pnlPct >= 0 ? '▲ ' : '▼ '}{Math.abs(h.pnlPct).toFixed(2)}%
                     </td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="flex gap-2 justify-center">
+                    <td className="py-3 px-4 !text-right">
+                      <div className="flex gap-2 justify-end">
                         <button
                           type="button"
                           className="h-[28px] px-3 bg-transparent text-[#2962FF] hover:bg-[#2962FF]/10 text-xs font-semibold rounded-sm border border-transparent transition-all duration-150"
@@ -174,7 +171,7 @@ export default function Portfolio() {
                             setModal({ mode: 'buy', symbol: h.symbol, name: h.stock_name })
                           }
                         >
-                          Buy More
+                          Buy
                         </button>
                         <button
                           type="button"

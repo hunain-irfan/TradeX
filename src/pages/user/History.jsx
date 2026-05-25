@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useTransactions } from '../../hooks/useTransactions'
+import { Undo2, Download } from '../../lib/navIcons'
+import StockSymbolCell from '../../components/ui/StockSymbolCell'
 import { PageLoader, PageError, EmptyState } from '../../components/ui/PageState'
 
 function exportCsv(rows) {
@@ -103,10 +105,11 @@ export default function History() {
         <h1 className="text-2xl font-bold text-white">Transaction History</h1>
         <button
           type="button"
-          className="primary-btn"
+          className="primary-btn gap-2"
           disabled={!canUndo || undoing}
           onClick={handleUndo}
         >
+          <Undo2 className="w-4 h-4" strokeWidth={2} aria-hidden />
           {undoing ? 'Undoing...' : 'Undo Last Trade'}
         </button>
       </div>
@@ -138,7 +141,7 @@ export default function History() {
       <div className="flex justify-end">
         <button
           type="button"
-          className="secondary-btn"
+          className="secondary-btn gap-2"
           disabled={filtered.length === 0}
           onClick={() =>
             exportCsv(
@@ -155,20 +158,21 @@ export default function History() {
             )
           }
         >
+          <Download className="w-4 h-4" strokeWidth={2} aria-hidden />
           Export CSV
         </button>
       </div>
 
       <div className="watchlist-table overflow-x-auto">
-        <div className="table-header-row grid grid-cols-8 gap-2 px-4 py-3 text-sm font-medium">
-          <span>Date</span>
-          <span>Symbol</span>
-          <span>Action</span>
-          <span>Qty</span>
-          <span>Price</span>
-          <span>Total</span>
-          <span>Balance After</span>
-          <span>Realized P&L</span>
+        <div className="table-header-row app-grid-row history-grid text-sm font-medium">
+          <span className="cell-num font-mono text-[11px] uppercase text-[#555555] !justify-self-start !text-left">Date</span>
+          <span className="cell-stock font-mono text-[11px] uppercase text-[#555555]">Symbol</span>
+          <span className="cell-num font-mono text-[11px] uppercase text-[#555555]">Action</span>
+          <span className="cell-num font-mono text-[11px] uppercase text-[#555555]">Qty</span>
+          <span className="cell-num font-mono text-[11px] uppercase text-[#555555]">Price</span>
+          <span className="cell-num font-mono text-[11px] uppercase text-[#555555]">Total</span>
+          <span className="cell-num font-mono text-[11px] uppercase text-[#555555]">Balance</span>
+          <span className="cell-num font-mono text-[11px] uppercase text-[#555555]">P&L</span>
         </div>
         {filtered.length === 0 ? (
           <div className="p-8">
@@ -176,15 +180,25 @@ export default function History() {
           </div>
         ) : (
           filtered.map((tx) => (
-            <div key={tx.id} className="data-row grid grid-cols-8 gap-2 px-4 py-3 text-sm">
-              <span>{new Date(tx.created_at).toLocaleString()}</span>
-              <span className="font-semibold">{tx.stock_symbol}</span>
-              <span className={tx.action === 'BUY' ? 'text-green-500' : 'text-red-500'}>{tx.action}</span>
-              <span>{tx.quantity}</span>
-              <span>${Number(tx.price).toFixed(2)}</span>
-              <span>${Number(tx.total_value).toFixed(2)}</span>
-              <span>${Number(tx.balance_after).toFixed(2)}</span>
-              <span className={Number(tx.realizedPnl) >= 0 ? 'profit-text' : 'loss-text'}>
+            <div key={tx.id} className="data-row app-grid-row history-grid text-sm">
+              <span className="cell-num !justify-self-start !text-left text-xs text-gray-400">
+                {new Date(tx.created_at).toLocaleString()}
+              </span>
+              <div className="cell-stock min-w-0">
+                <StockSymbolCell
+                  symbol={tx.stock_symbol}
+                  name={tx.stock_name}
+                  showName={false}
+                />
+              </div>
+              <span className={`cell-num ${tx.action === 'BUY' ? 'text-green-500' : 'text-red-500'}`}>
+                {tx.action}
+              </span>
+              <span className="cell-num">{tx.quantity}</span>
+              <span className="cell-num">${Number(tx.price).toFixed(2)}</span>
+              <span className="cell-num">${Number(tx.total_value).toFixed(2)}</span>
+              <span className="cell-num">${Number(tx.balance_after).toFixed(2)}</span>
+              <span className={`cell-num ${Number(tx.realizedPnl) >= 0 ? 'profit-text' : 'loss-text'}`}>
                 {tx.realizedPnl !== '' ? `$${tx.realizedPnl}` : '—'}
               </span>
             </div>

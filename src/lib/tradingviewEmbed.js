@@ -1,3 +1,7 @@
+import { toTradingViewSymbol } from '../data/stocks'
+
+export { toTradingViewSymbol }
+
 let widgetCounter = 0
 
 /**

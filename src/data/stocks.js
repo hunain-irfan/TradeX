@@ -1,5 +1,37 @@
-/** Top 100 US stocks — sorted by symbol for binarySearch */
-export const STOCK_LIST = [
+/** Tickers that primarily trade on Nasdaq (rest of STOCK_LIST → NYSE). */
+const NASDAQ_SYMBOLS = new Set([
+  'AAPL',
+  'ADBE',
+  'AMD',
+  'AMGN',
+  'AMZN',
+  'AVGO',
+  'BKNG',
+  'CHTR',
+  'CMCSA',
+  'COST',
+  'CSCO',
+  'GILD',
+  'GOOG',
+  'GOOGL',
+  'INTC',
+  'INTU',
+  'ISRG',
+  'MDLZ',
+  'META',
+  'MSFT',
+  'NFLX',
+  'NVDA',
+  'PEP',
+  'PYPL',
+  'QCOM',
+  'SBUX',
+  'TMUS',
+  'TSLA',
+  'TXN',
+])
+
+const RAW_STOCKS = [
   { symbol: 'AAPL', name: 'Apple Inc.' },
   { symbol: 'ABBV', name: 'AbbVie Inc.' },
   { symbol: 'ABT', name: 'Abbott Laboratories' },
@@ -102,4 +134,19 @@ export const STOCK_LIST = [
   { symbol: 'WFC', name: 'Wells Fargo' },
   { symbol: 'WMT', name: 'Walmart Inc.' },
   { symbol: 'XOM', name: 'Exxon Mobil' },
-].sort((a, b) => a.symbol.localeCompare(b.symbol))
+]
+
+/** Top 100 US stocks — sorted by symbol; includes primary exchange for TradingView */
+export const STOCK_LIST = RAW_STOCKS.map((s) => ({
+  ...s,
+  exchange: NASDAQ_SYMBOLS.has(s.symbol) ? 'NASDAQ' : 'NYSE',
+})).sort((a, b) => a.symbol.localeCompare(b.symbol))
+
+/** TradingView symbol id, e.g. V → NYSE:V */
+export function toTradingViewSymbol(symbol) {
+  if (!symbol) return ''
+  if (symbol.includes(':')) return symbol
+  const stock = STOCK_LIST.find((s) => s.symbol === symbol)
+  const exchange = stock?.exchange ?? 'NYSE'
+  return `${exchange}:${symbol}`
+}

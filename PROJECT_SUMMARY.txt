@@ -1,233 +1,287 @@
 ================================================================================
-TRADEX — FINAL PROJECT SUMMARY
+TRADEX — PROJECT SUMMARY (FULL CODEBASE REFERENCE)
 ================================================================================
-Generated: Phase 1–11 complete (per provided specification)
-Stack: React 19 + Vite 6 + Tailwind CSS 4 + Supabase + Finnhub + Recharts + TradingView widgets
+Last updated: 2026-05-25
+Repository: TradeX (paper trading web app)
+Status: Phases 1–11 + Profile/Settings + auth polish; production build succeeds
+Stack: React 19 + Vite 6 + Tailwind CSS 4 + Supabase + Finnhub + Recharts +
+       TradingView embeds + Lucide React
 
 ================================================================================
-1. FOLDER STRUCTURE
+0. PROJECT OVERVIEW
+================================================================================
+
+TradeX is a browser-only paper trading platform. Users get a virtual $10,000
+wallet on signup, trade 100 predefined US stocks at live (or cached) Finnhub
+prices, and compete on a leaderboard. Admins manage users, fund requests, and
+audit actions via Supabase RPCs protected by JWT role metadata.
+
+Architecture (high level):
+
+  Browser (React SPA)
+    ├── Supabase Auth + Postgres (RLS) — users, wallets, trades, watchlist
+    ├── Finnhub REST — quotes, news, candles (client-side API key)
+    ├── Finnhub WebSocket — live prices on Watchlist (max 50 symbols)
+    ├── Finnhub CDN — company logos (static2.finnhub.io stock_logo URLs)
+    └── TradingView CDN widgets — charts, tape, news, market overview
+
+Documentation (single sources of truth):
+  README.md                    — Quick start, deploy, links
+  supabase/SUPABASE_SETUP.md   — ALL Supabase steps (SQL, Auth, emails, admin)
+  PROJECT_SUMMARY.txt          — This file (deep technical reference)
+
+Source scale:
+  ~90+ project files (excluding node_modules / dist)
+  18 user-facing routes + admin + public auth + 404
+
+================================================================================
+1. COLOR THEME, FONTS & DESIGN SYSTEM
+================================================================================
+
+Source of truth: src/index.css (@theme + @layer utilities)
+
+THEME: "Bloomberg / Signalist" financial terminal dark UI (dark only)
+
+  Backgrounds: #0A0A0A page, #111111 cards, #161616 hover, #1E1E1E borders
+  Accent: #2962FF (primary blue)
+  P&L: #00C853 profit, #FF3B30 loss
+  Navbar: #0D0D0D, h-[52px]
+
+Fonts (Google Fonts in index.css):
+  Inter      → UI, nav, buttons (font-sans)
+  Roboto Mono → prices, tables, stats (font-mono)
+
+Brand: public/logo.png via src/components/layout/Logo.jsx (navbar, auth, favicon)
+
+Utilities: .container, .primary-btn, .secondary-btn, .dashboard-card,
+            .form-input, .watchlist-table, .profit-text, .loss-text, etc.
+
+================================================================================
+2. FOLDER STRUCTURE
 ================================================================================
 
 TradeX/
-├── .env                    # Local secrets (gitignored) — copy from .env.example
-├── .env.example            # Template for required env vars
-├── .gitignore
-├── README.md               # Quick start & deploy
-├── PROJECT_SUMMARY.txt     # This file
+├── .env.example
+├── README.md
+├── PROJECT_SUMMARY.txt
 ├── index.html
 ├── package.json
 ├── vite.config.js
 ├── public/
-│   └── vite.svg
-├── supabase/               # Run manually in Supabase SQL Editor
-│   ├── README.md
+│   └── logo.png
+├── supabase/
+│   ├── SUPABASE_SETUP.md       ← ONE guide for entire Supabase setup
 │   ├── phase5-schema.sql
 │   ├── fix-user-trigger.sql
 │   ├── phase10-leaderboard.sql
-│   └── phase11-admin-rpc.sql
+│   ├── phase11-admin-rpc.sql
+│   └── email-templates/
+│       ├── confirm-signup.html
+│       └── reset-password.html
 └── src/
-    ├── main.jsx
-    ├── App.jsx             # React Router (public / user / admin)
-    ├── index.css           # Tailwind + design system utilities
-    ├── data/
-    │   └── stocks.js       # 100 US stocks (binary search)
+    ├── main.jsx, App.jsx, index.css
+    ├── data/stocks.js          # 100 US stocks + binarySearch
     ├── lib/
-    │   ├── supabase.js
-    │   ├── finnhub.js
-    │   ├── dsa.js
-    │   ├── marketHours.js
-    │   ├── trading.js      # Buy/sell execution
-    │   ├── admin.js        # Admin actions + logging
-    │   └── tradingviewEmbed.js
+    │   ├── supabase.js, finnhub.js, trading.js, admin.js
+    │   ├── dsa.js, marketHours.js, stockLogo.js, navIcons.js
+    │   ├── authRedirect.js, tradingviewEmbed.js
     ├── hooks/
-    │   ├── useAuth.js
-    │   ├── useFinnhub.js
-    │   ├── useFinnhubSocket.js
-    │   ├── usePortfolio.js
-    │   ├── useAlerts.js
-    │   └── useTransactions.js
+    │   ├── useAuth.js          # + updateProfile()
+    │   ├── useFinnhub.js, useFinnhubSocket.js
+    │   ├── usePortfolio.js, useTransactions.js
     ├── components/
-    │   ├── layout/
-    │   │   ├── Navbar.jsx
-    │   │   ├── TickerTape.jsx
-    │   │   ├── Layout.jsx
-    │   │   ├── ProtectedRoute.jsx
-    │   │   ├── AdminRoute.jsx
-    │   │   └── BannedScreen.jsx
-    │   ├── ui/
-    │   │   ├── StockCard.jsx, StatCard.jsx, PriceTag.jsx, Badge.jsx
-    │   │   ├── LoadingSpinner.jsx, EmptyState.jsx, PageState.jsx
-    │   ├── charts/
-    │   │   ├── PortfolioPie.jsx, PnLArea.jsx, LeaderboardBar.jsx
-    │   ├── trading/
-    │   │   └── BuySellModal.jsx
-    │   └── tradingview/
-    │       ├── AdvancedChart.jsx, MarketOverview.jsx
-    │       ├── Heatmap.jsx, SymbolInfo.jsx
+    │   ├── layout/  Navbar, TickerTape, Layout, Logo, ProtectedRoute, AdminRoute
+    │   ├── ui/      StockLogo, StockSymbolCell, PageHeader, DashboardStatCard, …
+    │   ├── charts/  PortfolioPie, PnLArea, LeaderboardBar
+    │   ├── trading/ BuySellModal, RecentTransactions
+    │   └── tradingview/ AdvancedChart, MarketOverview, FinancialNews, …
     └── pages/
-        ├── Landing.jsx, Login.jsx
-        ├── user/
-        │   ├── Dashboard.jsx, Search.jsx, Portfolio.jsx, Watchlist.jsx
-        │   ├── Alerts.jsx, History.jsx, Wallet.jsx, Leaderboard.jsx
-        │   └── StockDetail.jsx
-        └── admin/
-            ├── AdminDashboard.jsx, AdminUsers.jsx, AdminWallet.jsx
-            ├── AdminAnalytics.jsx, AdminLogs.jsx
+        ├── Landing.jsx, Login.jsx, ForgotPassword, ResetPassword, VerifyEmail
+        ├── NotFound.jsx
+        ├── user/  Dashboard, Search, Portfolio, Watchlist, History, Wallet,
+        │          Leaderboard, StockDetail, Profile, Settings
+        └── admin/ AdminDashboard, AdminUsers, AdminWallet, Analytics, Logs
+
+Removed / do not add back without reason:
+  - tradex_landing_page.html (legacy; Landing.jsx is canonical)
+  - logo-old.png, logo-new.png (use public/logo.png only)
+  - Alerts UI + useAlerts hook (feature removed from app)
+  - Split supabase README fragments (merged into SUPABASE_SETUP.md)
 
 ================================================================================
-2. COMPLETED FEATURES (PHASES 1–11)
+3. DEPENDENCIES & BUILD
 ================================================================================
 
-PHASE 1 — Project setup
-  - Vite + React, dependencies, Tailwind v4, .env, .gitignore
+Production:
+  react ^19, react-dom ^19, react-router-dom ^7.15
+  @supabase/supabase-js ^2.106
+  recharts ^2.15, lucide-react ^1.16
 
-PHASE 2 — Folder structure
-  - Full src tree (components, pages, hooks, lib)
+Dev: vite ^6, @vitejs/plugin-react, tailwindcss ^4, @tailwindcss/vite
 
-PHASE 3 — Design system
-  - Custom @theme colors, utility classes (buttons, tables, cards, news)
+Scripts: npm run dev | build | preview
 
-PHASE 4 — Core libraries
-  - Supabase client, Finnhub API + caches, market hours, DSA structures
-
-PHASE 5 — Database (SQL provided)
-  - wallets, portfolios, transactions, watchlist, alerts, fund_requests, admin_logs
-  - RLS, new-user trigger ($10k wallet + metadata)
-
-PHASE 6 — Routing
-  - Public / user (protected) / admin routes with Layout
-
-PHASE 7 — Layout
-  - Navbar (nav, more menu, alerts badge, avatar, mobile menu)
-  - TickerTape (TradingView)
-  - ProtectedRoute (auth, banned screen), AdminRoute
-
-PHASE 8 — TradingView widgets
-  - AdvancedChart, MarketOverview, Heatmap, SymbolInfo
-
-PHASE 9 — Hooks
-  - useAuth, useFinnhub, useFinnhubSocket, usePortfolio, useAlerts, useTransactions
-
-PHASE 10 — User pages
-  - Dashboard, Search, Portfolio (buy/sell), Watchlist (live WS), Alerts
-  - History (undo, CSV), Wallet (fund requests), Leaderboard, StockDetail
-
-PHASE 11 — Admin pages
-  - Dashboard stats, user management, fund approvals, analytics, audit logs
+Env (.env.example):
+  VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_FINNHUB_KEY
 
 ================================================================================
-3. MISSING / TODO (NOT IN PROVIDED SPEC)
+4. ROUTING
 ================================================================================
 
-[ ] Phase 12+ — Not provided (e.g. rich marketing Landing page)
-[ ] Profile / Settings pages (Navbar links go to /dashboard placeholder)
-[ ] 404 Not Found route
-[ ] Email verification flow UI
-[ ] Password reset page
-[ ] Automated tests (unit / e2e)
-[ ] ESLint / Prettier config
-[ ] CI/CD pipeline
-[ ] Server-side Finnhub proxy (hide API key — optional hardening)
-[ ] Real-time alert push notifications (browser/email)
-[ ] Weighted portfolio analytics beyond basic P&L
-[ ] Email display on leaderboard (privacy consideration)
+PUBLIC
+  /                  Landing
+  /login             Sign in / sign up
+  /verify-email      Post-signup confirmation + resend
+  /forgot-password   Request reset link
+  /reset-password    Set new password from email
+  *                  NotFound
+
+USER (ProtectedRoute → Layout → Navbar + TickerTape)
+  /dashboard         Stats, TV widgets, recent transactions, portfolio pie
+  /search            Stock search + company logos on cards
+  /portfolio         Holdings, P&L chart, buy/sell
+  /watchlist         WebSocket live prices + chart
+  /history           Filters, CSV, undo last trade
+  /wallet            Balance, fund requests
+  /leaderboard       get_leaderboard() RPC + live marks
+  /profile           Account overview, stats, quick links
+  /settings          Display name, password, preferences, logout
+  /stock/:symbol     Chart, symbol info, news, trade, watchlist
+
+ADMIN (AdminRoute — user_metadata.role === 'admin')
+  /admin, /admin/users, /admin/wallet, /admin/analytics, /admin/logs
+
+Guards:
+  ProtectedRoute → /login if no session; BannedScreen if is_banned
+  AdminRoute → admin only
+  is_frozen → blocks trading in BuySellModal (not global route block)
 
 ================================================================================
-4. KNOWN BUGS & INCOMPLETE MODULES
+5. COMPLETED FEATURES
 ================================================================================
 
-TRADINGVIEW WIDGETS
-  - Fixed: removed script.async to avoid querySelector null errors
-  - May still flash/reload on React Strict Mode double-mount in dev
-  - Depends on third-party CDN (s3.tradingview.com) — offline = broken widgets
-  - Multiple widgets on Dashboard can be slow or rate-limited by TradingView
+Core (Phases 1–11): Vite/React/Tailwind, Supabase schema + RLS, trading engine,
+Finnhub integration, DSA structures in hooks, all user + admin pages, TV widgets.
 
-FINNHUB
-  - Free tier rate limits — many symbols / fast polling may fail
-  - useFinnhub skips polling when market closed (no live updates after hours)
-  - WebSocket max 50 symbols; symbol format may need exchange prefix for some tickers
-  - BRK.B and similar symbols may need different Finnhub symbol format
+Recent additions:
+  [x] Profile page (/profile) — stats, badges, quick links
+  [x] Settings page (/settings) — display name, password, prefs in user_metadata
+  [x] Auth flows — verify email, forgot/reset password, email HTML templates
+  [x] Landing marketing page (Landing.jsx + landing.css)
+  [x] 404 NotFound
+  [x] Custom logo (Logo.jsx, /logo.png)
+  [x] Stock company logos (stockLogo.js, StockLogo.jsx, StockSymbolCell.jsx)
+  [x] Lucide icons (navIcons.js, table actions, stat cards)
+  [x] Consolidated Supabase docs (supabase/SUPABASE_SETUP.md)
 
-SUPABASE / AUTH
-  - Admin actions on auth.users require RPC (phase11-admin-rpc.sql) — must be run
-  - User must re-login after role/metadata changes
-  - Google OAuth requires manual setup in Supabase dashboard
-  - Delete user via admin is irreversible
-
-TRADING LOGIC
-  - Paper trading only; no order slippage/fees
-  - is_frozen checked in BuySellModal only (not all code paths)
-  - History realized P&L uses simplified avg buy (not FIFO lot matching)
-  - undoLast reverses last DB transaction; edge cases if portfolio manually edited
-
-LEADERBOARD
-  - Requires phase10-leaderboard.sql RPC
-  - Portfolio value uses live Finnhub prices when available
-
-UI / UX
-  - Landing page is minimal (title + CTA only)
-  - Large JS bundle (~960KB) — no code splitting
-  - No global React Error Boundary
+Removed from app (DB may still have alerts table from phase5):
+  [ ] Price alerts UI, useAlerts, AlertsProvider, /alerts route
 
 ================================================================================
-5. PRODUCTION READINESS
+6. DATA & BUSINESS LOGIC
 ================================================================================
 
-VERDICT: NOT fully production-ready without additional DevOps and configuration.
-         Suitable for DEMO / COURSE / PORTFOLIO with Supabase + env configured.
+Stock universe: src/data/stocks.js (100 symbols)
 
-READY:
-  [x] Production build works (npm run build)
-  [x] Env-based config (Vite VITE_* vars)
-  [x] .gitignore excludes secrets and dist
-  [x] .env.example documented
-  [x] RLS enabled on Supabase tables
-  [x] Admin gated by role + RPC
+Trading (lib/trading.js): Buy/sell at live quote, wallet debit/credit,
+  weighted avg buy_price, transactions with balance_after.
 
-REQUIRED BEFORE PRODUCTION DEPLOY:
-  [ ] Run all supabase/*.sql on production Supabase project
-  [ ] Set production env vars on host (never commit .env)
-  [ ] Supabase Auth → Site URL + Redirect URLs for production domain
-  [ ] Enable Email provider (and Google if used) in Supabase
-  [ ] Confirm RLS policies tested for user + admin
-  [ ] Create at least one admin user (metadata SQL + re-login)
-  [ ] Finnhub production API key with adequate quota
-  [ ] Deploy dist/ to static host (Vercel, Netlify, Cloudflare Pages, etc.)
+DSA (lib/dsa.js):
+  PortfolioMap     → usePortfolio
+  TransactionStack → useTransactions (undo)
+  binarySearch     → Search exact symbol
+  sortByField      → Portfolio, Leaderboard
 
-RECOMMENDED HARDENING:
-  [ ] Add 404 page and catch-all route
-  [ ] Add Error Boundary component
-  [ ] Code-split routes (React.lazy) to reduce bundle size
-  [ ] Finnhub proxy via Supabase Edge Function (hide VITE_FINNHUB_KEY)
-  [ ] Rate limiting / CAPTCHA on auth (Supabase settings)
-  [ ] Monitoring (Sentry) and analytics
-  [ ] HTTPS only (host default)
-  [ ] Content Security Policy for TradingView scripts
-  [ ] Automated DB backups (Supabase dashboard)
+Profile metadata (Supabase auth user_metadata):
+  display_name, preferences { email_alerts, trade_confirm }, role, is_banned, is_frozen
 
-SECURITY NOTES:
-  - VITE_SUPABASE_ANON_KEY and VITE_FINNHUB_KEY are visible in browser bundle
-  - This is normal for Supabase anon key (RLS protects data)
-  - Finnhub key in client is a known limitation — use backend proxy for strict production
-  - Never expose Supabase service_role key in frontend
+Leaderboard: phase10-leaderboard.sql required; exposes emails to all users.
+
+Admin: phase11-admin-rpc.sql + lib/admin.js; re-login after role change.
 
 ================================================================================
-6. SUPABASE SQL CHECKLIST (YOUR SIDE)
+7. SUPABASE — WHAT YOU MUST DO
 ================================================================================
 
-Run in order:
+See supabase/SUPABASE_SETUP.md (complete steps).
+
+SQL order:
   1. phase5-schema.sql
-  2. fix-user-trigger.sql (if signup errors occurred)
+  2. fix-user-trigger.sql (if signup/wallet fails)
   3. phase10-leaderboard.sql
   4. phase11-admin-rpc.sql
 
+Dashboard (no SQL):
+  - URL Configuration (Site URL + Redirect URLs)
+  - Email provider ON + Confirm email ON
+  - Paste email-templates/*.html into Auth email templates
+  - Optional Google OAuth
+  - Promote admin via SQL UPDATE on auth.users
+
+.env must match the Supabase project where SQL was run.
+
 ================================================================================
-7. NPM SCRIPTS
+8. MISSING / TODO
 ================================================================================
 
-  npm run dev      → http://localhost:5173
-  npm run build    → output to dist/
-  npm run preview  → preview production build locally
+[ ] Automated tests (unit / e2e)
+[ ] ESLint / Prettier
+[ ] CI/CD (GitHub Actions)
+[ ] Route-level code splitting (large bundle warning)
+[ ] Global React Error Boundary
+[ ] Finnhub Edge Function proxy (hide API key)
+[ ] Server-side is_frozen enforcement on all trade RPCs
+[ ] TypeScript migration
+[ ] Remove unused alerts table from DB (optional cleanup migration)
+[ ] Avatar upload / phone field on profile
+
+Done (was previously TODO):
+  [x] Profile & Settings pages
+  [x] 404, Landing, email verification, password reset
+  [x] Email HTML templates in repo
+  [x] Single Supabase setup document
+
+================================================================================
+9. KNOWN LIMITATIONS & RISKS
+================================================================================
+
+- Finnhub API key in client bundle (VITE_FINNHUB_KEY)
+- TradingView CDN dependency; Strict Mode may flicker widgets in dev
+- Leaderboard shows user emails to all authenticated users
+- undoLast assumes no manual DB edits
+- Starting balance $10,000 hardcoded in some UI stats
+- alerts table exists in schema but app does not use it
+- Admin JWT metadata stale until sign out/in
+
+================================================================================
+10. PRODUCTION READINESS
+================================================================================
+
+VERDICT: Demo / FYP / portfolio ready after SUPABASE_SETUP.md + env on host.
+         Not enterprise-ready without tests, proxy, monitoring, SMTP.
+
+Before public deploy:
+  [ ] All SQL on production Supabase project
+  [ ] VITE_* on static host
+  [ ] Auth URLs for production domain
+  [ ] Email templates tested
+  [ ] Admin promoted + re-login
+  [ ] npm run build → deploy dist/
+
+================================================================================
+11. QUICK REFERENCE — WHERE TO CHANGE WHAT
+================================================================================
+
+  Supabase setup     → supabase/SUPABASE_SETUP.md
+  Add stock          → src/data/stocks.js
+  Theme / colors     → src/index.css
+  New page + route   → src/pages/ + App.jsx + Navbar
+  Trade rules        → src/lib/trading.js
+  DB / RLS           → supabase/phase5-schema.sql (+ new migration)
+  Admin RPCs         → phase11-admin-rpc.sql + lib/admin.js
+  Company logos      → lib/stockLogo.js, components/ui/StockLogo.jsx
+  Logo image         → public/logo.png
+  Auth email HTML    → supabase/email-templates/
 
 ================================================================================
 END OF SUMMARY

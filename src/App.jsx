@@ -6,16 +6,21 @@ import AdminRoute from './components/layout/AdminRoute'
 
 import Landing from './pages/Landing'
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
+import VerifyEmail from './pages/VerifyEmail'
+import NotFound from './pages/NotFound'
 
 import Dashboard from './pages/user/Dashboard'
 import Search from './pages/user/Search'
 import Portfolio from './pages/user/Portfolio'
 import Watchlist from './pages/user/Watchlist'
-import Alerts from './pages/user/Alerts'
 import History from './pages/user/History'
 import Wallet from './pages/user/Wallet'
 import Leaderboard from './pages/user/Leaderboard'
 import StockDetail from './pages/user/StockDetail'
+import Profile from './pages/user/Profile'
+import Settings from './pages/user/Settings'
 
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
@@ -30,6 +35,9 @@ export default function App() {
         {/* PUBLIC */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
 
         {/* USER — ProtectedRoute → Layout */}
         <Route element={<ProtectedRoute />}>
@@ -38,10 +46,11 @@ export default function App() {
             <Route path="/search" element={<Search />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/watchlist" element={<Watchlist />} />
-            <Route path="/alerts" element={<Alerts />} />
             <Route path="/history" element={<History />} />
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/stock/:symbol" element={<StockDetail />} />
           </Route>
         </Route>
@@ -56,6 +65,9 @@ export default function App() {
             <Route path="/admin/logs" element={<AdminLogs />} />
           </Route>
         </Route>
+
+        {/* 404 — must be last */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   )

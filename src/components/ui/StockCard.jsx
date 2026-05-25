@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import PriceTag from './PriceTag'
+import StockLogo from './StockLogo'
 
 export default function StockCard({ symbol, name, quote, onAddWatchlist, adding }) {
   const price = quote?.c ?? 0
@@ -8,10 +9,13 @@ export default function StockCard({ symbol, name, quote, onAddWatchlist, adding 
 
   return (
     <div className="dashboard-card flex flex-col gap-3">
-      <Link to={`/stock/${symbol}`} className="flex justify-between items-start hover:opacity-90">
-        <div>
-          <p className="font-bold text-white text-lg">{symbol}</p>
-          <p className="text-gray-500 text-sm truncate">{name}</p>
+      <Link to={`/stock/${symbol}`} className="flex justify-between items-start gap-3 hover:opacity-90">
+        <div className="flex items-center gap-3 min-w-0">
+          <StockLogo symbol={symbol} size={48} />
+          <div className="min-w-0">
+            <p className="font-bold text-white text-lg">{symbol}</p>
+            <p className="text-gray-500 text-sm truncate">{name}</p>
+          </div>
         </div>
         <PriceTag price={price} change={change} changePercent={changePct} />
       </Link>

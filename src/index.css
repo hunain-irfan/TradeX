@@ -23,6 +23,9 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   * {
     @apply border-border outline-ring/30;
   }
@@ -93,6 +96,11 @@
       hover:text-primary-400 transition-all duration-150;
   }
 
+  /* Finnhub logos: left-align in box (PNG padding varies per symbol) */
+  .stock-logo-img {
+    image-rendering: auto;
+  }
+
   .news-item {
     @apply bg-gray-800 rounded-lg border border-gray-600 p-5
       hover:border-primary-500/40 hover:bg-gray-700/30 transition-all duration-150 cursor-pointer;
@@ -131,8 +139,34 @@ th {
   letter-spacing: 0.08em;
   padding: 0 16px;
   height: 36px;
-  text-align: left;
   border: none;
+}
+
+/* Grid-based tables (watchlist, history) — header/value same alignment */
+.app-grid-row {
+  display: grid;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+
+.app-grid-row .cell-num {
+  text-align: right;
+  justify-self: end;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.app-grid-row .cell-stock {
+  min-width: 0;
+}
+
+.watchlist-grid {
+  grid-template-columns: minmax(12rem, 1.5fr) 5.5rem 5.5rem 4.5rem 5.5rem;
+}
+
+.history-grid {
+  grid-template-columns: 9.5rem minmax(5.5rem, 0.9fr) 3.5rem 3rem 5rem 5.5rem 6.5rem 5.5rem;
 }
 
 td {
@@ -171,7 +205,7 @@ tr:hover {
 /* Custom Bloomberg-style Ticker & Widget Skins */
 .tradingview-widget-container {
   background-color: #111111 !important;
-  border: 1px solid #1E1E1E !important;
+  border: 1px solid #1e1e1e !important;
   border-radius: 8px !important;
   overflow: hidden !important;
 }
@@ -186,4 +220,67 @@ tr:hover {
 .tradingview-widget-container iframe {
   width: 100% !important;
   background-color: transparent !important;
+}
+
+/* Hide TradingView footer / copyright link on embeds */
+.tradingview-widget-container.tv-hide-copyright .tradingview-widget-copyright,
+.tradingview-widget-container.tv-hide-copyright a[href*="tradingview.com"] {
+  display: none !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+}
+
+/* Dashboard Top Stories — hide iframe header row (no embed option) */
+.tv-financial-news {
+  overflow: hidden !important;
+}
+.tv-financial-news .tradingview-widget-container__widget {
+  margin-top: -52px;
+  height: calc(100% + 52px) !important;
+}
+.tv-financial-news iframe {
+  display: block;
+}
+
+/* Match TradingView embed widget titles (e.g. NVDA Financials) */
+.tv-widget-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: #dbdbdb;
+  letter-spacing: normal;
+  text-transform: none;
+  margin-bottom: 20px;
+}
+
+.tv-financial-news{
+  margin-top: -47px;
+}
+
+.tv-widget-title span {
+  color: #2962ff;
+}
+
+/* Advanced chart — no extra widget border (card wrapper already has one) */
+.tradingview-widget-container.custom-chart {
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+/* Symbol Info only — fixed height; TV embed tries to grow container (~203px) */
+.tv-symbol-info-compact {
+  height: var(--symbol-info-h, 185px) !important;
+  min-height: var(--symbol-info-h, 185px) !important;
+  max-height: var(--symbol-info-h, 185px) !important;
+  overflow: hidden !important;
+  zoom: 0.812;
+}
+@supports not (zoom: 1) {
+  .tv-symbol-info-compact {
+    transform: scale(0.82);
+    transform-origin: top left;
+    width: 121.95% !important;
+  }
 }

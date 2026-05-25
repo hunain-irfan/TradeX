@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
 import { useFinnhubSocket } from '../../hooks/useFinnhubSocket'
 import { STOCK_LIST } from '../../data/stocks'
 import AdvancedChart from '../../components/tradingview/AdvancedChart'
+import { Plus, Trash2 } from '../../lib/navIcons'
+import StockSymbolCell from '../../components/ui/StockSymbolCell'
 import { PageLoader, PageError, EmptyState } from '../../components/ui/PageState'
 
 export default function Watchlist() {
@@ -77,19 +78,19 @@ export default function Watchlist() {
           value={addSymbol}
           onChange={(e) => setAddSymbol(e.target.value)}
         />
-        <button type="submit" className="primary-btn">
+        <button type="submit" className="primary-btn gap-2">
+          <Plus className="w-4 h-4" strokeWidth={2} aria-hidden />
           Add
         </button>
       </form>
 
       <div className="watchlist-table overflow-x-auto">
-        <div className="table-header-row grid grid-cols-6 gap-2 px-4 py-3 text-sm font-medium">
-          <span>Symbol</span>
-          <span>Name</span>
-          <span>Price</span>
-          <span>Change</span>
-          <span>Change%</span>
-          <span>Action</span>
+        <div className="table-header-row app-grid-row watchlist-grid text-sm font-medium">
+          <span className="cell-stock font-mono text-[11px] uppercase text-[#555555]">Stock</span>
+          <span className="cell-num font-mono text-[11px] uppercase text-[#555555]">Price</span>
+          <span className="cell-num font-mono text-[11px] uppercase text-[#555555]">Change</span>
+          <span className="cell-num font-mono text-[11px] uppercase text-[#555555]">Change%</span>
+          <span className="cell-num font-mono text-[11px] uppercase text-[#555555]">Action</span>
         </div>
         {items.length === 0 ? (
           <div className="p-8">
@@ -106,33 +107,32 @@ export default function Watchlist() {
             return (
               <div
                 key={item.id}
-                className="data-row grid grid-cols-6 gap-2 px-4 py-3 text-sm items-center cursor-pointer"
+                className="data-row app-grid-row watchlist-grid text-sm cursor-pointer"
                 onClick={() => setChartSymbol(item.stock_symbol)}
               >
-                <Link
-                  to={`/stock/${item.stock_symbol}`}
-                  className="text-primary-400 font-semibold"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {item.stock_symbol}
-                </Link>
-                <span className="truncate">{item.stock_name}</span>
-                <span>${Number(price).toFixed(2)}</span>
-                <span className={up ? 'profit-text' : 'loss-text'}>
+                <div className="cell-stock min-w-0">
+                  <StockSymbolCell
+                    symbol={item.stock_symbol}
+                    name={item.stock_name}
+                  />
+                </div>
+                <span className="cell-num">${Number(price).toFixed(2)}</span>
+                <span className={`cell-num ${up ? 'profit-text' : 'loss-text'}`}>
                   {up ? '+' : ''}
                   {Number(change).toFixed(2)}
                 </span>
-                <span className={up ? 'profit-text' : 'loss-text'}>
+                <span className={`cell-num ${up ? 'profit-text' : 'loss-text'}`}>
                   {Number(changePct).toFixed(2)}%
                 </span>
                 <button
                   type="button"
-                  className="text-red-500 hover:underline"
+                  className="cell-num inline-flex items-center justify-end gap-1.5 text-red-500 hover:text-red-400 text-xs font-medium"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleRemove(item.id)
                   }}
                 >
+                  <Trash2 className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />
                   Remove
                 </button>
               </div>

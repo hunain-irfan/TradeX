@@ -73,39 +73,6 @@ export class TransactionStack {
 }
 
 /**
- * AlertQueue — Queue (FIFO).
- * FIFO structure for processing alerts in order.
- */
-export class AlertQueue {
-  constructor() {
-    /** @type {object[]} */
-    this._queue = []
-  }
-
-  enqueue(alert) {
-    this._queue.push(alert)
-  }
-
-  dequeue() {
-    if (this.isEmpty()) return undefined
-    return this._queue.shift()
-  }
-
-  peek() {
-    if (this.isEmpty()) return undefined
-    return this._queue[0]
-  }
-
-  isEmpty() {
-    return this._queue.length === 0
-  }
-
-  toArray() {
-    return [...this._queue]
-  }
-}
-
-/**
  * binarySearch — searches a sorted array of objects by key field.
  * O(log n) search on sorted stock symbol list.
  * @returns {number} index if found, otherwise -1

@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { preloadStockLogos } from '../../lib/stockLogo'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
 import { STOCK_LIST } from '../../data/stocks'
@@ -32,6 +33,10 @@ export default function Search() {
 
   const symbols = filtered.map((s) => s.symbol)
   const { prices, loading, error } = useFinnhub(symbols, 30000)
+
+  useEffect(() => {
+    preloadStockLogos(STOCK_LIST.map((s) => s.symbol))
+  }, [])
 
   const handleAddWatchlist = async (symbol, name) => {
     if (!user) return
