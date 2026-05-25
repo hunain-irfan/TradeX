@@ -176,7 +176,7 @@ export default function History() {
           </div>
         ) : (
           filtered.map((tx) => (
-            <div key={tx.id} className="table-row grid grid-cols-8 gap-2 px-4 py-3 text-sm">
+            <div key={tx.id} className="data-row grid grid-cols-8 gap-2 px-4 py-3 text-sm">
               <span>{new Date(tx.created_at).toLocaleString()}</span>
               <span className="font-semibold">{tx.stock_symbol}</span>
               <span className={tx.action === 'BUY' ? 'text-green-500' : 'text-red-500'}>{tx.action}</span>

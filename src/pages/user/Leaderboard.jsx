@@ -124,7 +124,7 @@ export default function Leaderboard() {
               <span>Trades</span>
             </div>
             {ranked.map((u) => (
-              <div key={u.userId} className="table-row grid grid-cols-6 gap-2 px-4 py-3 text-sm items-center">
+              <div key={u.userId} className="data-row grid grid-cols-6 gap-2 px-4 py-3 text-sm items-center">
                 <span className="font-bold">#{u.rank}</span>
                 <span className="w-9 h-9 rounded-full bg-primary-500 flex items-center justify-center text-white font-bold">
                   {u.name[0]?.toUpperCase()}

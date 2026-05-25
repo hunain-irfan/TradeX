@@ -119,7 +119,7 @@ export default function AdminLogs() {
           filtered.map((log) => (
             <div
               key={log.id}
-              className="table-row grid grid-cols-4 gap-2 px-4 py-3 text-sm"
+              className="data-row grid grid-cols-4 gap-2 px-4 py-3 text-sm"
             >
               <span className="text-gray-200">{log.action}</span>
               <span className="truncate">{emails[log.performed_by] ?? log.performed_by?.slice(0, 8)}</span>

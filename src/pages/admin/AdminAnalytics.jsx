@@ -120,7 +120,7 @@ export default function AdminAnalytics() {
             {topTraders.map((t) => (
               <div
                 key={t.user_id}
-                className="table-row grid grid-cols-4 gap-2 px-4 py-3 text-sm"
+                className="data-row grid grid-cols-4 gap-2 px-4 py-3 text-sm"
               >
                 <span className="truncate">{t.email}</span>
                 <span>${Number(t.balance ?? 0).toFixed(2)}</span>

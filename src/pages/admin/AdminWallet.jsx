@@ -130,7 +130,7 @@ export default function AdminWallet() {
           rows.map((req) => (
             <div
               key={req.id}
-              className="table-row grid grid-cols-5 gap-2 px-4 py-3 text-sm items-center"
+              className="data-row grid grid-cols-5 gap-2 px-4 py-3 text-sm items-center"
             >
               <span className="truncate">{userEmails[req.user_id] ?? req.user_id.slice(0, 8)}</span>
               <span>${Number(req.amount).toFixed(2)}</span>

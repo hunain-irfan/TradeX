@@ -15,8 +15,10 @@ export default function Search() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toUpperCase()
-    if (!q) return STOCK_LIST.slice(0, 20)
-
+    if (!q) {
+      const topSymbols = ['AAPL', 'NVDA', 'MSFT', 'GOOGL', 'AMZN', 'META', 'BRK.B', 'LLY', 'TSLA', 'AVGO', 'V', 'JPM', 'UNH', 'WMT', 'MA', 'JNJ', 'XOM', 'PG', 'COST', 'HD']
+      return STOCK_LIST.filter(s => topSymbols.includes(s.symbol)).sort((a, b) => topSymbols.indexOf(a.symbol) - topSymbols.indexOf(b.symbol))
+    }
     const idx = binarySearch(STOCK_LIST, q, 'symbol')
     if (idx >= 0) {
       const start = Math.max(0, idx - 5)

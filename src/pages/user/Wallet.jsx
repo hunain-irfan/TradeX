@@ -167,7 +167,7 @@ export default function Wallet() {
           </div>
         ) : (
           requests.map((r) => (
-            <div key={r.id} className="table-row grid grid-cols-5 gap-2 px-4 py-3 text-sm items-center">
+            <div key={r.id} className="data-row grid grid-cols-5 gap-2 px-4 py-3 text-sm items-center">
               <span>${Number(r.amount).toFixed(2)}</span>
               <span className="truncate">{r.reason || '—'}</span>
               <Badge variant={r.status}>{r.status}</Badge>

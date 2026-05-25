@@ -106,7 +106,7 @@ export default function Watchlist() {
             return (
               <div
                 key={item.id}
-                className="table-row grid grid-cols-6 gap-2 px-4 py-3 text-sm items-center cursor-pointer"
+                className="data-row grid grid-cols-6 gap-2 px-4 py-3 text-sm items-center cursor-pointer"
                 onClick={() => setChartSymbol(item.stock_symbol)}
               >
                 <Link

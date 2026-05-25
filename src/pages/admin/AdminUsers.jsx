@@ -140,7 +140,7 @@ export default function AdminUsers() {
             return (
               <div
                 key={u.user_id}
-                className="table-row grid grid-cols-7 gap-2 px-4 py-3 text-sm items-start min-w-225"
+                className="data-row grid grid-cols-7 gap-2 px-4 py-3 text-sm items-start min-w-225"
               >
                 <span className="truncate">{u.email}</span>
                 <span className="capitalize">{u.role}</span>

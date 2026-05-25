@@ -1,54 +1,42 @@
-import { useEffect, useRef } from 'react'
-import { mountTradingViewWidget } from '../../lib/tradingviewEmbed'
+import React, { useEffect, useRef, memo } from 'react';
 
-const HEATMAP_SCRIPT =
-  'https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js'
-
-const CONFIG = {
-  dataSource: 'SPX500',
-  grouping: 'sector',
-  blockSize: 'market_cap_basic',
-  blockColor: 'change',
-  colorTheme: 'dark',
-  locale: 'en',
-  symbolUrl: '',
-  hasTopBar: true,
-  isDataSetEnabled: false,
-  isZoomEnabled: true,
-  hasSymbolTooltip: true,
-  width: '100%',
-  height: '300',
-  isTransparent: true,
-  gridLineColor: 'rgba(255,255,255,0.05)',
-}
-
-export default function Heatmap() {
-  const containerRef = useRef(null)
+function HeatmapWidget() {
+  const container = useRef();
 
   useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    let cleanup = () => {}
-    let cancelled = false
-
-    const frameId = requestAnimationFrame(() => {
-      if (cancelled) return
-      cleanup = mountTradingViewWidget(container, HEATMAP_SCRIPT, CONFIG)
-    })
-
-    return () => {
-      cancelled = true
-      cancelAnimationFrame(frameId)
-      cleanup()
-    }
-  }, [])
+    container.current.innerHTML = '';
+    const script = document.createElement("script");
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js";
+    script.type = "text/javascript";
+    script.async = true;
+    script.innerHTML = `
+      {
+        "exchanges": [],
+        "dataSource": "SPX500",
+        "grouping": "sector",
+        "blockSize": "market_cap_basic",
+        "blockColor": "change",
+        "locale": "en",
+        "symbolUrl": "",
+        "colorTheme": "dark",
+        "hasTopBar": true,
+        "isDataSetEnabled": false,
+        "isZoomEnabled": false,
+        "hasSymbolTooltip": true,
+        "isMonoSize": false,
+        "width": "100%",
+        "height": "100%"
+      }`;
+    container.current.appendChild(script);
+  }, []);
 
   return (
     <div
-      ref={containerRef}
       className="tradingview-widget-container w-full"
-      style={{ height: '300px' }}
+      ref={container}
+      style={{ height: '600px' }}
     />
-  )
+  );
 }
+
+export default memo(HeatmapWidget);
