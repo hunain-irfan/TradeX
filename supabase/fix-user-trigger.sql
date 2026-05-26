@@ -27,8 +27,8 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.wallets (user_id, balance)
-  VALUES (NEW.id, 10000.00)
+  INSERT INTO public.wallets (user_id, balance, total_deposited)
+  VALUES (NEW.id, 10000.00, 10000.00)
   ON CONFLICT (user_id) DO NOTHING;
   RETURN NEW;
 END;

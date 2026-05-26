@@ -144,8 +144,12 @@ export default function AdminUsers() {
               >
                 <span className="truncate">{u.email}</span>
                 <span className="capitalize">{u.role}</span>
-                <Badge variant={status.variant}>{status.label}</Badge>
-                <span>${Number(u.balance).toFixed(2)}</span>
+                <span className="flex items-start">
+                  <Badge variant={status.variant}>{status.label}</Badge>
+                </span>
+                <span className={u.role === 'admin' ? 'text-gray-500' : 'font-mono'}>
+                  {u.role === 'admin' ? '—' : `$${Number(u.balance).toFixed(2)}`}
+                </span>
                 <span>{new Date(u.created_at).toLocaleDateString()}</span>
                 <div className="col-span-2 flex flex-wrap gap-1">
                   <button
@@ -179,14 +183,16 @@ export default function AdminUsers() {
                   >
                     View Portfolio
                   </button>
-                  <button
-                    type="button"
-                    className="secondary-btn h-8 px-2 text-xs"
-                    disabled={busy}
-                    onClick={() => handleResetWallet(u)}
-                  >
-                    Reset Wallet
-                  </button>
+                  {u.role !== 'admin' && (
+                    <button
+                      type="button"
+                      className="secondary-btn h-8 px-2 text-xs"
+                      disabled={busy}
+                      onClick={() => handleResetWallet(u)}
+                    >
+                      Reset Wallet
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="text-red-500 text-xs px-2 h-8 border border-red-500 rounded-xl hover:bg-red-500/10"

@@ -1,4 +1,5 @@
 import StockSymbolCell from '../ui/StockSymbolCell'
+import Badge from '../ui/Badge'
 
 export default function RecentTransactions({ transactions }) {
   const recent = transactions?.slice(0, 8) || []
@@ -44,15 +45,7 @@ export default function RecentTransactions({ transactions }) {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium uppercase tracking-wider font-mono ${
-                        tx.action === 'BUY'
-                          ? 'bg-[rgba(0,200,83,0.1)] text-[#00C853] border border-[#00C853]'
-                          : 'bg-[rgba(255,59,48,0.1)] text-[#FF3B30] border border-[#FF3B30]'
-                      }`}
-                    >
-                      {tx.action}
-                    </span>
+                    <Badge variant={tx.action === 'BUY' ? 'buy' : 'sell'}>{tx.action}</Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex flex-col items-end">

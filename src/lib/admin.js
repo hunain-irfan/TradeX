@@ -61,16 +61,12 @@ export async function approveFundRequest(request, adminNote = '') {
 
   if (wErr) return { error: wErr }
 
-  const newBalance = Number(wallet.balance) + Number(request.amount)
+  const amount = Number(request.amount)
+  const newBalance = Number(wallet.balance) + amount
+  const newTotalDeposited =
+    Number(wallet.total_deposited ?? 10000) + amount
 
-  const { error: walletErr } = await supabase
-    .from('wallets')
-    .update({ balance: newBalance })
-    .eq('user_id', request.user_id)
-
-  if (walletErr) return { error: walletErr }
-
-  const { error: reqErr } = await supabase
+  const { data: updated, error: reqErr } = await supabase
     .from('fund_requests')
     .update({
       status: 'approved',
@@ -78,12 +74,28 @@ export async function approveFundRequest(request, adminNote = '') {
       resolved_at: new Date().toISOString(),
     })
     .eq('id', request.id)
+    .eq('status', 'pending')
+    .select('id')
+    .maybeSingle()
 
-  if (!reqErr) {
-    await logAdminAction(`APPROVE_FUND_REQUEST $${request.amount}`, request.user_id)
+  if (reqErr) return { error: reqErr }
+  if (!updated) return { error: new Error('Request already processed') }
+
+  const { error: walletErr } = await supabase
+    .from('wallets')
+    .update({ balance: newBalance, total_deposited: newTotalDeposited })
+    .eq('user_id', request.user_id)
+
+  if (walletErr) {
+    await supabase
+      .from('fund_requests')
+      .update({ status: 'pending', admin_note: null, resolved_at: null })
+      .eq('id', request.id)
+    return { error: walletErr }
   }
 
-  return { error: reqErr }
+  await logAdminAction(`APPROVE_FUND_REQUEST $${request.amount}`, request.user_id)
+  return { error: null }
 }
 
 export async function rejectFundRequest(requestId, userId, reason) {

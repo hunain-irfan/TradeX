@@ -3,6 +3,11 @@ import { useTransactions } from '../../hooks/useTransactions'
 import { Undo2, Download } from '../../lib/navIcons'
 import StockSymbolCell from '../../components/ui/StockSymbolCell'
 import { PageLoader, PageError, EmptyState } from '../../components/ui/PageState'
+import {
+  buildSellCostBasisByTxId,
+  computeRealizedPnl,
+  pnlToneClass,
+} from '../../lib/portfolioMetrics'
 
 function exportCsv(rows) {
   const headers = [
@@ -48,29 +53,18 @@ export default function History() {
   const [undoing, setUndoing] = useState(false)
   const [undoError, setUndoError] = useState(null)
 
-  const buyPrices = useMemo(() => {
-    const map = {}
-    transactions
-      .slice()
-      .reverse()
-      .forEach((tx) => {
-        if (tx.action === 'BUY') {
-          map[tx.stock_symbol] = Number(tx.price)
-        }
-      })
-    return map
-  }, [transactions])
+  const sellCostBasis = useMemo(
+    () => buildSellCostBasisByTxId(transactions),
+    [transactions],
+  )
 
   const enriched = useMemo(() => {
     return transactions.map((tx) => {
-      let realizedPnl = ''
-      if (tx.action === 'SELL') {
-        const avgBuy = buyPrices[tx.stock_symbol] ?? Number(tx.price)
-        realizedPnl = ((Number(tx.price) - avgBuy) * Number(tx.quantity)).toFixed(2)
-      }
+      const pnl = computeRealizedPnl(tx, sellCostBasis)
+      const realizedPnl = pnl == null ? '' : pnl.toFixed(2)
       return { ...tx, realizedPnl }
     })
-  }, [transactions, buyPrices])
+  }, [transactions, sellCostBasis])
 
   const filtered = useMemo(() => {
     return enriched.filter((tx) => {
@@ -198,7 +192,9 @@ export default function History() {
               <span className="cell-num">${Number(tx.price).toFixed(2)}</span>
               <span className="cell-num">${Number(tx.total_value).toFixed(2)}</span>
               <span className="cell-num">${Number(tx.balance_after).toFixed(2)}</span>
-              <span className={`cell-num ${Number(tx.realizedPnl) >= 0 ? 'profit-text' : 'loss-text'}`}>
+              <span
+                className={`cell-num ${tx.realizedPnl !== '' ? pnlToneClass(tx.realizedPnl, { zeroClass: 'text-gray-400' }) : 'text-gray-500'}`}
+              >
                 {tx.realizedPnl !== '' ? `$${tx.realizedPnl}` : '—'}
               </span>
             </div>

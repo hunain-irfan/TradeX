@@ -26,12 +26,12 @@ export function useTransactions() {
       .from('transactions')
       .select('*')
       .eq('user_id', user.id)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
       .limit(50)
 
     if (!error && data) {
       const stack = new TransactionStack()
-      data.forEach((tx) => stack.push(tx))
+      ;[...data].reverse().forEach((tx) => stack.push(tx))
       stackRef.current = stack
       syncFromStack()
     }
@@ -104,7 +104,7 @@ export function useTransactions() {
           stock_symbol: lastTx.stock_symbol,
           stock_name: lastTx.stock_symbol,
           quantity: lastTx.quantity,
-          buy_price: lastTx.price,
+          buy_price: lastTx.buy_price ?? lastTx.price,
         })
       }
     }

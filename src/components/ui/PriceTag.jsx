@@ -1,5 +1,7 @@
+import { pnlToneClass } from '../../lib/portfolioMetrics'
+
 export default function PriceTag({ price, change, changePercent, size = 'md' }) {
-  const isUp = Number(change) >= 0
+  const tone = pnlToneClass(change ?? changePercent ?? 0, { zeroClass: 'text-gray-400' })
   const sizeClass = size === 'lg' ? 'text-3xl font-bold' : 'text-base font-semibold'
 
   return (
@@ -8,8 +10,8 @@ export default function PriceTag({ price, change, changePercent, size = 'md' }) 
         ${Number(price ?? 0).toFixed(2)}
       </span>
       {(change != null || changePercent != null) && (
-        <span className={isUp ? 'profit-text text-sm' : 'loss-text text-sm'}>
-          {isUp ? '+' : ''}
+        <span className={`text-sm ${tone}`}>
+          {Number(change ?? changePercent ?? 0) > 0 ? '+' : ''}
           {change != null ? Number(change).toFixed(2) : ''}
           {changePercent != null ? ` (${Number(changePercent).toFixed(2)}%)` : ''}
         </span>

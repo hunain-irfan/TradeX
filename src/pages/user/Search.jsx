@@ -2,23 +2,25 @@ import { useEffect, useMemo, useState } from 'react'
 import { preloadStockLogos } from '../../lib/stockLogo'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
-import { STOCK_LIST } from '../../data/stocks'
+import { DEFAULT_TOP_SYMBOLS, STOCK_LIST } from '../../data/stocks'
 import { binarySearch } from '../../lib/dsa'
-import { useFinnhub } from '../../hooks/useFinnhub'
 import StockCard from '../../components/ui/StockCard'
-import { PageLoader, PageError, EmptyState } from '../../components/ui/PageState'
+import { EmptyState } from '../../components/ui/PageState'
+import { useToast } from '../../components/ui/Toast'
 
 export default function Search() {
   const { user } = useAuth()
   const [query, setQuery] = useState('')
-  const [adding, setAdding] = useState(null)
-  const [msg, setMsg] = useState(null)
+  const [watchlistSet, setWatchlistSet] = useState(() => new Set())
+  const [watchlistBusy, setWatchlistBusy] = useState(null)
+  const { showToast } = useToast()
 
   const filtered = useMemo(() => {
     const q = query.trim().toUpperCase()
     if (!q) {
-      const topSymbols = ['AAPL', 'NVDA', 'MSFT', 'GOOGL', 'AMZN', 'META', 'BRK.B', 'LLY', 'TSLA', 'AVGO', 'V', 'JPM', 'UNH', 'WMT', 'MA', 'JNJ', 'XOM', 'PG', 'COST', 'HD']
-      return STOCK_LIST.filter(s => topSymbols.includes(s.symbol)).sort((a, b) => topSymbols.indexOf(a.symbol) - topSymbols.indexOf(b.symbol))
+      return STOCK_LIST.filter((s) => DEFAULT_TOP_SYMBOLS.includes(s.symbol)).sort(
+        (a, b) => DEFAULT_TOP_SYMBOLS.indexOf(a.symbol) - DEFAULT_TOP_SYMBOLS.indexOf(b.symbol),
+      )
     }
     const idx = binarySearch(STOCK_LIST, q, 'symbol')
     if (idx >= 0) {
@@ -31,30 +33,67 @@ export default function Search() {
     ).slice(0, 10)
   }, [query])
 
-  const symbols = filtered.map((s) => s.symbol)
-  const { prices, loading, error } = useFinnhub(symbols, 30000)
-
   useEffect(() => {
-    preloadStockLogos(STOCK_LIST.map((s) => s.symbol))
+    preloadStockLogos(DEFAULT_TOP_SYMBOLS)
   }, [])
 
-  const handleAddWatchlist = async (symbol, name) => {
+  useEffect(() => {
+    if (!user) {
+      setWatchlistSet(new Set())
+      return
+    }
+    supabase
+      .from('watchlist')
+      .select('stock_symbol')
+      .eq('user_id', user.id)
+      .then(({ data }) => {
+        setWatchlistSet(new Set((data ?? []).map((r) => r.stock_symbol)))
+      })
+  }, [user])
+
+  const toggleWatchlist = async (symbol, name) => {
     if (!user) return
-    setAdding(symbol)
-    setMsg(null)
-    const { error: err } = await supabase.from('watchlist').insert({
-      user_id: user.id,
-      stock_symbol: symbol,
-      stock_name: name,
-    })
-    setAdding(null)
-    if (err) setMsg(err.message.includes('duplicate') ? 'Already in watchlist' : err.message)
-    else setMsg(`${symbol} added to watchlist`)
+    setWatchlistBusy(symbol)
+
+    if (watchlistSet.has(symbol)) {
+      const { error: err } = await supabase
+        .from('watchlist')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('stock_symbol', symbol)
+      if (!err) {
+        setWatchlistSet((prev) => {
+          const next = new Set(prev)
+          next.delete(symbol)
+          return next
+        })
+        showToast(`${symbol} removed from watchlist`)
+      } else {
+        showToast(err.message, 'error')
+      }
+    } else {
+      const { error: err } = await supabase.from('watchlist').insert({
+        user_id: user.id,
+        stock_symbol: symbol,
+        stock_name: name,
+      })
+      if (!err) {
+        setWatchlistSet((prev) => new Set(prev).add(symbol))
+        showToast(`${symbol} added to watchlist`)
+      } else {
+        showToast(
+          err.message.includes('duplicate') ? 'Already in watchlist' : err.message,
+          'error',
+        )
+      }
+    }
+
+    setWatchlistBusy(null)
   }
 
   return (
     <div className="container pt-6 pb-10">
-      <h1 className="text-2xl font-bold text-white mb-4">Search Stocks</h1>
+      <h1 className="text-2xl font-bold text-white mb-4">Stocks</h1>
 
       <input
         type="text"
@@ -64,25 +103,17 @@ export default function Search() {
         onChange={(e) => setQuery(e.target.value)}
       />
 
-      {msg && <p className="text-primary-400 text-sm mb-4">{msg}</p>}
-
-      {loading && <PageLoader />}
-      {error && <PageError message={error} />}
-
-      {!loading && !error && filtered.length === 0 && (
+      {filtered.length === 0 ? (
         <EmptyState title="No stocks found" message="Try a different symbol or company name." />
-      )}
-
-      {!loading && !error && filtered.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7">
           {filtered.map((stock) => (
             <StockCard
               key={stock.symbol}
               symbol={stock.symbol}
-              name={stock.name}
-              quote={prices[stock.symbol]}
-              onAddWatchlist={handleAddWatchlist}
-              adding={adding === stock.symbol}
+              inWatchlist={watchlistSet.has(stock.symbol)}
+              onToggleWatchlist={() => toggleWatchlist(stock.symbol, stock.name)}
+              watchlistLoading={watchlistBusy === stock.symbol}
             />
           ))}
         </div>

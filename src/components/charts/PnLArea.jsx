@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import {
   AreaChart,
   Area,
@@ -8,53 +9,61 @@ import {
 } from 'recharts'
 
 export default function PnLArea({ transactions = [] }) {
-  let cumulative = 0
-  const data = transactions
-    .slice()
-    .reverse()
-    .map((tx, i) => {
-      if (tx.action === 'SELL' && tx.realizedPnl != null) {
-        cumulative += Number(tx.realizedPnl)
-      }
-      return {
-        label: new Date(tx.created_at).toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' }),
-        pnl: cumulative,
-        idx: i,
-      }
-    })
+  const data = useMemo(() => {
+    let cumulative = 0
+    return transactions
+      .slice()
+      .reverse()
+      .map((tx, i) => {
+        if (tx.action === 'SELL' && tx.realizedPnl != null) {
+          cumulative += Number(tx.realizedPnl)
+        }
+        return {
+          label: new Date(tx.created_at).toLocaleDateString(undefined, {
+            month: '2-digit',
+            day: '2-digit',
+          }),
+          pnl: cumulative,
+          idx: i,
+        }
+      })
+  }, [transactions])
 
-  if (data.length === 0) {
-    return (
-      <div className="bg-[#111111] border border-[#1E1E1E] rounded-lg p-5 flex items-center justify-center py-12 text-[#555555] text-xs font-mono uppercase">
-        No realized P&L history available
-      </div>
-    )
-  }
+  const chartData = data.length > 0 ? data : [{ label: '—', pnl: 0, idx: 0 }]
+  const isEmpty = data.length === 0
 
   return (
-    <div className="bg-[#111111] border border-[#1E1E1E] rounded-lg p-5">
+    <div className="bg-[#111111] border border-[#1E1E1E] rounded-lg p-5 relative">
       <h3 className="text-[#888888] uppercase tracking-wider text-xs font-semibold font-mono mb-6">
         Cumulative Realized P&L
       </h3>
-      
+
+      {isEmpty && (
+        <div className="absolute inset-0 flex items-center justify-center pt-8 pointer-events-none z-10">
+          <span className="text-[#555555] text-xs font-mono uppercase">
+            No realized P&L history available
+          </span>
+        </div>
+      )}
+
       <ResponsiveContainer width="100%" height={260}>
-        <AreaChart data={data} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
+        <AreaChart data={chartData} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
           <defs>
             <linearGradient id="pnlGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#2962FF" stopOpacity={0.2}/>
-              <stop offset="95%" stopColor="#2962FF" stopOpacity={0.0}/>
+              <stop offset="5%" stopColor="#2962FF" stopOpacity={0.2} />
+              <stop offset="95%" stopColor="#2962FF" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <XAxis 
-            dataKey="label" 
-            stroke="#333333" 
-            tick={{ fontSize: 10, fontFamily: 'Roboto Mono, monospace', fill: '#555555' }} 
+          <XAxis
+            dataKey="label"
+            stroke="#333333"
+            tick={{ fontSize: 10, fontFamily: 'Roboto Mono, monospace', fill: '#555555' }}
             axisLine={false}
             tickLine={false}
           />
-          <YAxis 
-            stroke="#333333" 
-            tick={{ fontSize: 10, fontFamily: 'Roboto Mono, monospace', fill: '#555555' }} 
+          <YAxis
+            stroke="#333333"
+            tick={{ fontSize: 10, fontFamily: 'Roboto Mono, monospace', fill: '#555555' }}
             axisLine={false}
             tickLine={false}
           />
@@ -78,12 +87,12 @@ export default function PnLArea({ transactions = [] }) {
             }}
             formatter={(v) => [`$${Number(v).toFixed(2)}`, 'P&L']}
           />
-          <Area 
-            type="monotone" 
-            dataKey="pnl" 
-            stroke="#2962FF" 
+          <Area
+            type="monotone"
+            dataKey="pnl"
+            stroke="#2962FF"
             strokeWidth={2}
-            fill="url(#pnlGradient)" 
+            fill="url(#pnlGradient)"
           />
         </AreaChart>
       </ResponsiveContainer>

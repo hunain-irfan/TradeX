@@ -123,12 +123,15 @@ export async function executeSell({ userId, symbol, stockName, quantity }) {
 
   await supabase.from('wallets').update({ balance: balanceAfter }).eq('user_id', userId)
 
+  const costBasis = Number(holding.buy_price)
+
   const { error: txErr } = await supabase.from('transactions').insert({
     user_id: userId,
     stock_symbol: symbol,
     action: 'SELL',
     quantity: qty,
     price,
+    buy_price: costBasis,
     total_value: totalValue,
     balance_after: balanceAfter,
   })

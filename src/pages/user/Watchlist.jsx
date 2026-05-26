@@ -7,6 +7,7 @@ import AdvancedChart from '../../components/tradingview/AdvancedChart'
 import { Plus, Trash2 } from '../../lib/navIcons'
 import StockSymbolCell from '../../components/ui/StockSymbolCell'
 import { PageLoader, PageError, EmptyState } from '../../components/ui/PageState'
+import { pnlToneClass } from '../../lib/portfolioMetrics'
 
 export default function Watchlist() {
   const { user } = useAuth()
@@ -102,7 +103,7 @@ export default function Watchlist() {
             const price = q?.c ?? q?.p ?? 0
             const change = q?.d ?? 0
             const changePct = q?.dp ?? 0
-            const up = Number(change) >= 0
+            const changeTone = pnlToneClass(change, { zeroClass: 'text-gray-400' })
 
             return (
               <div
@@ -117,11 +118,12 @@ export default function Watchlist() {
                   />
                 </div>
                 <span className="cell-num">${Number(price).toFixed(2)}</span>
-                <span className={`cell-num ${up ? 'profit-text' : 'loss-text'}`}>
-                  {up ? '+' : ''}
+                <span className={`cell-num ${changeTone}`}>
+                  {Number(change) > 0 ? '+' : ''}
                   {Number(change).toFixed(2)}
                 </span>
-                <span className={`cell-num ${up ? 'profit-text' : 'loss-text'}`}>
+                <span className={`cell-num ${changeTone}`}>
+                  {Number(changePct) > 0 ? '+' : ''}
                   {Number(changePct).toFixed(2)}%
                 </span>
                 <button

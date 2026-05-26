@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { NavLink, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import { useWalletBalance } from '../../hooks/useWalletBalance'
 import { supabase } from '../../lib/supabase'
+import { getTraderDisplayName } from '../../lib/userDisplay'
 import Logo from './Logo'
 import {
   ROUTE_ICONS,
@@ -10,15 +12,15 @@ import {
   X,
   User,
   Settings,
-  Shield,
   LogOut,
 } from '../../lib/navIcons'
 
 const MAIN_LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
-  { to: '/search', label: 'Search' },
+  { to: '/search', label: 'Stocks' },
   { to: '/portfolio', label: 'Portfolio' },
   { to: '/watchlist', label: 'Watchlist' },
+  { to: '/alerts', label: 'Alerts' },
 ]
 
 const MORE_LINKS = [
@@ -45,7 +47,7 @@ function navLinkClass({ isActive }) {
 }
 
 function NavItem({ to, label, onClick, mobile = false, showIcon = false }) {
-  const Icon = showIcon ? (to === '/admin' ? Shield : ROUTE_ICONS[to]) : null
+  const Icon = showIcon ? ROUTE_ICONS[to] : null
   const className = ({ isActive }) =>
     mobile
       ? `flex items-center gap-2.5 px-3 py-2.5 rounded-lg ${
@@ -113,7 +115,8 @@ function DropdownLink({ to, onClick, children, icon: Icon }) {
 }
 
 export default function Navbar() {
-  const { user, isAdmin } = useAuth()
+  const { user } = useAuth()
+  const { balance, loading: walletLoading } = useWalletBalance()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -122,11 +125,16 @@ export default function Navbar() {
     navigate('/login')
   }
 
-  const avatarLetter = (user?.email?.[0] ?? 'U').toUpperCase()
+  const avatarLetter = (
+    getTraderDisplayName({
+      display_name: user?.user_metadata?.display_name,
+      email: user?.email,
+    })[0] ?? 'U'
+  ).toUpperCase()
 
   return (
-    <header className="h-[52px] bg-[#0D0D0D] border-b border-[#1A1A1A] sticky top-0 z-40">
-      <div className="container h-full flex items-center justify-between gap-4">
+    <header className="bg-[#0D0D0D] border-b border-[#1A1A1A] sticky top-0 z-40">
+      <div className="container flex items-center justify-between gap-4 py-5">
         <Logo to="/dashboard" className="h-7 w-auto max-w-[120px]" />
 
         <nav className="hidden lg:flex items-center gap-8 flex-1 justify-center">
@@ -158,12 +166,24 @@ export default function Navbar() {
           </Dropdown>
         </nav>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
+          <Link
+            to="/wallet"
+            className="flex flex-col items-end leading-tight hover:opacity-90 transition-opacity shrink-0"
+            title="Wallet balance"
+          >
+            <span className="hidden sm:block text-[10px] uppercase tracking-wider text-[#666666] font-mono">
+              Balance
+            </span>
+            <span className="text-xs sm:text-sm font-semibold font-mono text-white">
+              {walletLoading ? '…' : `$${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            </span>
+          </Link>
           <Dropdown
             trigger={
               <button
                 type="button"
-                className="w-9 h-9 rounded-full bg-primary-500 text-white font-semibold text-sm flex items-center justify-center hover:opacity-90 transition-opacity"
+                className="w-9 h-9 rounded-full bg-primary-500 text-white font-semibold text-sm flex items-center justify-center hover:opacity-90 transition-opacity pt-[2px]"
                 aria-label="User menu"
               >
                 {avatarLetter}
@@ -176,11 +196,6 @@ export default function Navbar() {
             <DropdownLink to="/settings" icon={Settings}>
               Settings
             </DropdownLink>
-            {isAdmin && (
-              <DropdownLink to="/admin" icon={Shield}>
-                Admin Panel
-              </DropdownLink>
-            )}
             <DropdownLink onClick={handleLogout} icon={LogOut}>
               Logout
             </DropdownLink>
@@ -188,7 +203,7 @@ export default function Navbar() {
 
           <button
             type="button"
-            className="lg:hidden icon-btn"
+            className="hidden max-lg:inline-flex w-9 h-9 shrink-0 rounded-full items-center justify-center bg-gray-700/60 text-gray-300 hover:bg-primary-500/20 hover:text-primary-400 transition-all duration-150"
             onClick={() => setMobileOpen((o) => !o)}
             aria-label="Menu"
           >
@@ -250,15 +265,6 @@ export default function Navbar() {
               onClick={() => setMobileOpen(false)}
             />
           </div>
-          {isAdmin && (
-            <NavItem
-              to="/admin"
-              label="Admin Panel"
-              mobile
-              showIcon
-              onClick={() => setMobileOpen(false)}
-            />
-          )}
         </nav>
       )}
     </header>

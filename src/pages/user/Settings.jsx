@@ -195,11 +195,11 @@ export default function Settings() {
           >
             <form onSubmit={handleProfileSave} className="space-y-4">
               <div>
-                <label className="text-gray-500 text-sm">Display name</label>
+                <label className="text-gray-500 text-sm">Name</label>
                 <input
                   type="text"
                   className="form-input w-full mt-1"
-                  placeholder="Your name"
+                  placeholder="Enter your name"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   maxLength={48}

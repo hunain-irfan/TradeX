@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { authRedirectUrl, AUTH_PATHS } from '../lib/authRedirect'
+import { getAppHomePath } from '../lib/authPaths'
 
 export function useAuth() {
   const [user, setUser] = useState(null)
@@ -36,12 +37,16 @@ export function useAuth() {
     return { data, error }
   }, [])
 
-  const signUp = useCallback(async (email, password) => {
+  const signUp = useCallback(async (email, password, displayName) => {
+    const trimmedName = displayName?.trim()
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: authRedirectUrl(AUTH_PATHS.afterConfirm),
+        data: trimmedName
+          ? { display_name: trimmedName }
+          : undefined,
       },
     })
     return { data, error }
@@ -98,7 +103,7 @@ export function useAuth() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: authRedirectUrl('/dashboard'),
+        redirectTo: authRedirectUrl(getAppHomePath(false)),
       },
     })
     return { data, error }

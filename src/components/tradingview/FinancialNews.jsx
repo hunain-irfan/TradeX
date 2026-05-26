@@ -1,41 +1,48 @@
-import React, { useEffect, useRef, memo } from 'react';
+import { useEffect, useRef, memo } from 'react'
+import { mountTradingViewWidget } from '../../lib/tradingviewEmbed'
+
+const SCRIPT =
+  'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js'
+
+const CONFIG = {
+  feedMode: 'all_symbols',
+  isTransparent: true,
+  displayMode: 'regular',
+  width: '100%',
+  height: '547',
+  colorTheme: 'dark',
+  locale: 'en',
+}
 
 function FinancialNews() {
-  const container = useRef();
+  const containerRef = useRef(null)
 
   useEffect(() => {
-    container.current.innerHTML = '';
-    
-    const widgetDiv = document.createElement("div");
-    widgetDiv.className = "tradingview-widget-container__widget";
+    const el = containerRef.current
+    if (!el) return
 
-    const script = document.createElement("script");
-    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-timeline.js";
-    script.type = "text/javascript";
-    script.async = true;
-    script.innerHTML = `
-      {
-        "feedMode": "all_symbols",
-        "isTransparent": true,
-        "displayMode": "regular",
-        "width": "100%",
-        "height": "547",
-        "colorTheme": "dark",
-        "locale": "en"
-      }`;
-    
-    container.current.appendChild(widgetDiv);
-    container.current.appendChild(script);
-  }, []);
+    let cleanup = () => {}
+    let cancelled = false
+
+    const frameId = requestAnimationFrame(() => {
+      if (cancelled) return
+      cleanup = mountTradingViewWidget(el, SCRIPT, CONFIG)
+    })
+
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(frameId)
+      cleanup()
+    }
+  }, [])
 
   return (
     <div
-      className="tradingview-widget-container tv-financial-news"
-      ref={container}
-      style={{ width: '100%', height: 547}}
-    >
-    </div>
-  );
+      ref={containerRef}
+      className="tradingview-widget-container tv-hide-copyright tv-financial-news"
+      style={{ width: '100%', height: 547 }}
+    />
+  )
 }
 
-export default memo(FinancialNews);
+export default memo(FinancialNews)

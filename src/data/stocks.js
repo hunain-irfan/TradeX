@@ -29,6 +29,7 @@ const NASDAQ_SYMBOLS = new Set([
   'TMUS',
   'TSLA',
   'TXN',
+  'WMT',
 ])
 
 const RAW_STOCKS = [
@@ -142,10 +143,26 @@ export const STOCK_LIST = RAW_STOCKS.map((s) => ({
   exchange: NASDAQ_SYMBOLS.has(s.symbol) ? 'NASDAQ' : 'NYSE',
 })).sort((a, b) => a.symbol.localeCompare(b.symbol))
 
+/** 20 default tradable symbols (Search default grid, price alerts). */
+export const DEFAULT_TOP_SYMBOLS = [
+  'AAPL', 'NVDA', 'MSFT', 'GOOGL', 'AMZN', 'META', 'BRK.B', 'LLY', 'TSLA', 'AVGO',
+  'V', 'JPM', 'UNH', 'WMT', 'MA', 'JNJ', 'XOM', 'PG', 'COST', 'HD',
+]
+
+export const AVAILABLE_STOCK_LIST = DEFAULT_TOP_SYMBOLS.map((sym) =>
+  STOCK_LIST.find((s) => s.symbol === sym),
+).filter(Boolean)
+
+/** TradingView uses different exchange ids than our defaults for some tickers. */
+const TRADINGVIEW_SYMBOL_OVERRIDES = {
+  'BRK.B': 'NYSE:BRK.B',
+}
+
 /** TradingView symbol id, e.g. V → NYSE:V */
 export function toTradingViewSymbol(symbol) {
   if (!symbol) return ''
   if (symbol.includes(':')) return symbol
+  if (TRADINGVIEW_SYMBOL_OVERRIDES[symbol]) return TRADINGVIEW_SYMBOL_OVERRIDES[symbol]
   const stock = STOCK_LIST.find((s) => s.symbol === symbol)
   const exchange = stock?.exchange ?? 'NYSE'
   return `${exchange}:${symbol}`

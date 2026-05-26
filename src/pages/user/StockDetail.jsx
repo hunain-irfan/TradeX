@@ -23,24 +23,27 @@ import FundamentalData from '../../components/tradingview/FundamentalData'
 import CompanyProfile from '../../components/tradingview/CompanyProfile'
 
 import BuySellModal from '../../components/trading/BuySellModal'
+import WatchlistStarButton from '../../components/trading/WatchlistStarButton'
+import PriceAlertModal from '../../components/alerts/PriceAlertModal'
+import { Bell } from '../../lib/navIcons'
 
 import { PageLoader, PageError, EmptyState } from '../../components/ui/PageState'
 
 
 
-const SYMBOL_INFO_HEIGHT = 185
+const SYMBOL_INFO_HEIGHT = 178
 
-const CHART_HEIGHT = 550
+const CHART_HEIGHT = 535
 
 const SIDEBAR_TV_HEIGHT = 460
 
 /** News card — same slot as former Company Profile on sidebar */
 
-const NEWS_FEED_HEIGHT = 434
+const NEWS_FEED_HEIGHT = 440
 
 /** Company Profile — below chart on the left */
 
-const PROFILE_HEIGHT = 340
+const PROFILE_HEIGHT = 334
 
 
 
@@ -65,6 +68,7 @@ export default function StockDetail() {
 
 
   const [modal, setModal] = useState(null)
+  const [alertOpen, setAlertOpen] = useState(false)
 
 
 
@@ -180,7 +184,7 @@ export default function StockDetail() {
 
   return (
 
-    <div className="container pt-6 pb-20">
+    <div className="container pt-6 pb-20 font-tv">
 
       <div className="flex flex-col lg:flex-row gap-6 items-stretch">
 
@@ -188,43 +192,18 @@ export default function StockDetail() {
 
         {/* Left: symbol, chart, company profile */}
 
-        <div className="w-full lg:w-[65%] shrink-0 flex flex-col gap-6">
+        <div className="w-full lg:w-[64%] shrink-0 flex flex-col gap-6">
 
-          <div className="bg-[#111111] border border-[#1E1E1E] rounded-lg overflow-hidden relative shrink-0">
+          <div className="bg-[#111111] p-4 border border-[3px] border-[#1E1E1E] rounded-lg overflow-hidden relative shrink-0">
 
             <SymbolInfo symbol={symbol} height={SYMBOL_INFO_HEIGHT} />
 
-            <button
-
-              type="button"
-
-              className={`absolute top-3 right-3 z-10 p-2 rounded-md border transition-all duration-150 flex items-center justify-center ${
-
-                inWatchlist
-
-                  ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-500'
-
-                  : 'bg-[#111111]/90 border-[#1E1E1E] text-gray-500 hover:text-white hover:bg-[#161616]'
-
-              }`}
-
+            <WatchlistStarButton
+              className="absolute top-4.5 right-4.5 z-10"
+              inWatchlist={inWatchlist}
+              loading={watchlistLoading}
               onClick={toggleWatchlist}
-
-              disabled={watchlistLoading}
-
-              title={inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
-
-              aria-label={inWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
-
-            >
-
-              <svg className="w-5 h-5" fill={inWatchlist ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.907c.961 0 1.36 1.253.588 1.81l-3.97 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.971-2.888a1 1 0 00-1.176 0l-3.97 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.97-2.888c-.772-.557-.373-1.81.588-1.81h4.907a1 1 0 00.95-.69l1.519-4.674z" />
-
-              </svg>
-
-            </button>
+            />
 
           </div>
 
@@ -250,9 +229,9 @@ export default function StockDetail() {
 
         {/* Right: orders, financials, news feed */}
 
-        <div className="w-full lg:w-[35%] shrink-0 flex flex-col gap-6">
+        <div className="w-full lg:w-[34.5%] shrink-0 flex flex-col gap-6">
 
-          <div className="bg-[#111111] border border-[#1E1E1E] rounded-lg p-5 space-y-3 shrink-0 border-[3px]">
+          <div className="bg-[#111111] border border-[3px] border-[#1E1E1E] rounded-lg p-5 space-y-3 shrink-0 border-[3px]">
 
             <button
 
@@ -285,6 +264,15 @@ export default function StockDetail() {
 
             </button>
 
+            <button
+              type="button"
+              className="secondary-btn w-full font-bold !h-12 tracking-wider uppercase !text-[12px] text-primary-400 border-primary-500/30 hover:border-primary-500/50 hover:bg-primary-500/10 flex items-center justify-center gap-2"
+              onClick={() => setAlertOpen(true)}
+            >
+              <Bell className="w-4 h-4" strokeWidth={2} />
+              Create Price Alert
+            </button>
+
           </div>
 
 
@@ -299,7 +287,7 @@ export default function StockDetail() {
 
           <div
 
-            className="bg-[#111111] border border-[#1E1E1E] rounded-lg p-5 flex flex-col overflow-hidden shrink-0"
+            className="bg-[#111111] border border-[#1E1E1E] border-[3px] rounded-lg p-5 flex flex-col overflow-hidden shrink-0"
 
             style={{ height: NEWS_FEED_HEIGHT, minHeight: NEWS_FEED_HEIGHT }}
 
@@ -345,7 +333,7 @@ export default function StockDetail() {
 
                   >
 
-                    <div className="flex justify-between items-center text-[10px] text-gray-500 font-semibold uppercase font-mono gap-2">
+                    <div className="flex justify-between items-center text-[10image.pngpx] text-gray-500 font-semibold uppercase gap-2">
 
                       <span className="truncate">{item.source}</span>
 
@@ -363,7 +351,7 @@ export default function StockDetail() {
 
                     </div>
 
-                    <h4 className="text-white text-xs font-semibold mt-1 leading-snug line-clamp-2">
+                    <h4 className="text-[#dbdbdb] text-[13px] font-semibold mt-1 leading-snug line-clamp-2 hover:text-white">
 
                       {item.headline}
 
@@ -387,6 +375,14 @@ export default function StockDetail() {
 
 
 
+      <PriceAlertModal
+        open={alertOpen}
+        onClose={() => setAlertOpen(false)}
+        userId={user?.id}
+        stockSymbol={symbol}
+        stockName={stock?.name ?? symbol}
+      />
+
       <BuySellModal
 
         open={!!modal}
@@ -402,6 +398,8 @@ export default function StockDetail() {
         userId={user?.id}
 
         maxQuantity={modal?.maxQty}
+
+        avgBuyPrice={holding?.buy_price}
 
         onSuccess={refresh}
 

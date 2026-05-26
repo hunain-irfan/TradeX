@@ -4,6 +4,15 @@ import { approveFundRequest, rejectFundRequest } from '../../lib/admin'
 import Badge from '../../components/ui/Badge'
 import { PageLoader, PageError, EmptyState } from '../../components/ui/PageState'
 
+function shouldShowAdminNote(status, note) {
+  const n = note?.trim()
+  if (!n) return false
+  const s = (status ?? '').toLowerCase()
+  if (n.toLowerCase() === s) return false
+  if (s === 'approved' && n.toLowerCase() === 'approved') return false
+  return true
+}
+
 export default function AdminWallet() {
   const [pending, setPending] = useState([])
   const [resolved, setResolved] = useState([])
@@ -139,9 +148,11 @@ export default function AdminWallet() {
                 {tab === 'pending' ? (
                   new Date(req.requested_at).toLocaleString()
                 ) : (
-                  <span className="flex flex-col gap-1">
+                  <span className="flex flex-col items-start gap-1">
                     <Badge variant={req.status}>{req.status}</Badge>
-                    <span className="text-gray-500 text-xs">{req.admin_note || '—'}</span>
+                    {shouldShowAdminNote(req.status, req.admin_note) && (
+                      <span className="text-gray-500 text-xs">{req.admin_note}</span>
+                    )}
                   </span>
                 )}
               </span>

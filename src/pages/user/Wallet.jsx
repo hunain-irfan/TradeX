@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { usePortfolio } from '../../hooks/usePortfolio'
 import { supabase } from '../../lib/supabase'
 import { fetchWallet } from '../../lib/trading'
+import { computeHoldingsCostBasis } from '../../lib/portfolioMetrics'
 import Badge from '../../components/ui/Badge'
 import { PageLoader, PageError, EmptyState } from '../../components/ui/PageState'
 
@@ -10,7 +11,7 @@ const MAX_REQUEST = 5000
 
 export default function Wallet() {
   const { user } = useAuth()
-  const { totalValue, loading: portLoading } = usePortfolio()
+  const { holdings, totalValue, loading: portLoading } = usePortfolio()
   const [balance, setBalance] = useState(0)
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
@@ -88,7 +89,7 @@ export default function Wallet() {
     setSubmitting(false)
   }
 
-  const totalInvested = totalValue
+  const totalInvested = computeHoldingsCostBasis(holdings)
 
   if (loading || portLoading) return <div className="container pt-6"><PageLoader /></div>
   if (error) return <div className="container pt-6"><PageError message={error} onRetry={load} /></div>

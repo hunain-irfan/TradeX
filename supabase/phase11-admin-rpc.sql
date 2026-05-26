@@ -68,7 +68,9 @@ AS $$
 BEGIN
   PERFORM public.admin_require_admin();
   UPDATE public.wallets
-  SET balance = 10000.00, updated_at = now()
+  SET balance = 10000.00,
+      total_deposited = 10000.00,
+      updated_at = now()
   WHERE user_id = p_target_user_id;
 END;
 $$;
@@ -145,7 +147,11 @@ BEGIN
     ),
     'platform_pnl', (
       SELECT COALESCE(SUM(
-        CASE WHEN action = 'SELL' THEN total_value ELSE -total_value END
+        CASE
+          WHEN action = 'SELL' THEN
+            total_value - COALESCE(buy_price, price) * quantity
+          ELSE 0
+        END
       ), 0)
       FROM public.transactions
     ),
@@ -158,11 +164,16 @@ BEGIN
           w.balance,
           COUNT(tr.id)::int AS trades_count,
           COALESCE(SUM(
-            CASE WHEN tr.action = 'SELL' THEN tr.total_value ELSE -tr.total_value END
+            CASE
+              WHEN tr.action = 'SELL' THEN
+                tr.total_value - COALESCE(tr.buy_price, tr.price) * tr.quantity
+              ELSE 0
+            END
           ), 0) AS net_flow
         FROM auth.users u
         LEFT JOIN public.wallets w ON w.user_id = u.id
         LEFT JOIN public.transactions tr ON tr.user_id = u.id
+        WHERE COALESCE(u.raw_user_meta_data->>'role', 'user') <> 'admin'
         GROUP BY u.id, u.email, w.balance
         ORDER BY w.balance DESC NULLS LAST
         LIMIT 5

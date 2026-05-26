@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS public.wallets (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL UNIQUE REFERENCES auth.users (id) ON DELETE CASCADE,
   balance numeric(12, 2) NOT NULL DEFAULT 10000.00,
+  total_deposited numeric(12, 2) NOT NULL DEFAULT 10000.00,
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
@@ -48,6 +49,7 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   action text NOT NULL CHECK (action IN ('BUY', 'SELL')),
   quantity integer NOT NULL CHECK (quantity > 0),
   price numeric(12, 2) NOT NULL,
+  buy_price numeric(12, 2),
   total_value numeric(12, 2) NOT NULL,
   balance_after numeric(12, 2) NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now()
@@ -148,8 +150,8 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.wallets (user_id, balance)
-  VALUES (NEW.id, 10000.00)
+  INSERT INTO public.wallets (user_id, balance, total_deposited)
+  VALUES (NEW.id, 10000.00, 10000.00)
   ON CONFLICT (user_id) DO NOTHING;
   RETURN NEW;
 END;

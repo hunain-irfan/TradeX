@@ -9,6 +9,7 @@ import Badge from '../../components/ui/Badge'
 import { PageLoader } from '../../components/ui/PageState'
 import { Mail, Calendar, Shield } from 'lucide-react'
 import { User, Settings, Wallet, Briefcase, History, Star } from '../../lib/navIcons'
+import { getTraderDisplayName } from '../../lib/userDisplay'
 
 function StatTile({ label, value, sub }) {
   return (
@@ -37,10 +38,10 @@ export default function Profile() {
   const [watchlistCount, setWatchlistCount] = useState(0)
   const [statsLoading, setStatsLoading] = useState(true)
 
-  const displayName =
-    user?.user_metadata?.display_name?.trim() ||
-    user?.email?.split('@')[0] ||
-    'Trader'
+  const displayName = getTraderDisplayName({
+    display_name: user?.user_metadata?.display_name,
+    email: user?.email,
+  })
 
   useEffect(() => {
     if (!user) return

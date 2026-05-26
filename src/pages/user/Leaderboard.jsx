@@ -4,17 +4,17 @@ import { sortByField } from '../../lib/dsa'
 import { useFinnhub } from '../../hooks/useFinnhub'
 import LeaderboardBar from '../../components/charts/LeaderboardBar'
 import { PageLoader, PageError, EmptyState } from '../../components/ui/PageState'
-
-const STARTING = 10000
+import {
+  computeAccountValue,
+  computeTotalReturnPct,
+  DEFAULT_STARTING_CAPITAL,
+  pnlToneClass,
+} from '../../lib/portfolioMetrics'
+import { getTraderDisplayName } from '../../lib/userDisplay'
 
 function computeUserValue(row, prices) {
   const holdings = Array.isArray(row.holdings) ? row.holdings : []
-  const holdingsValue = holdings.reduce((sum, h) => {
-    const quote = prices[h.symbol]
-    const price = Number(quote?.c ?? h.buy_price ?? 0)
-    return sum + Number(h.quantity) * price
-  }, 0)
-  return Number(row.wallet_balance) + holdingsValue
+  return computeAccountValue(row.wallet_balance, holdings, prices)
 }
 
 export default function Leaderboard() {
@@ -49,16 +49,19 @@ export default function Leaderboard() {
       const holdings = r.holdings ?? []
       holdings.forEach((h) => set.add(h.symbol))
     })
-    return [...set].slice(0, 50)
+    return [...set].slice(0, 20)
   }, [rows])
 
-  const { prices, loading: priceLoading } = useFinnhub(allSymbols, 60000)
+  const { prices, loading: priceLoading, refreshing } = useFinnhub(allSymbols, 120000)
 
   const ranked = useMemo(() => {
     const list = rows.map((r) => {
       const portfolioValue = computeUserValue(r, prices)
-      const totalReturnPct = ((portfolioValue - STARTING) / STARTING) * 100
-      const name = r.user_email?.split('@')[0] ?? 'Trader'
+      const totalReturnPct = computeTotalReturnPct(
+        portfolioValue,
+        r.total_deposited ?? DEFAULT_STARTING_CAPITAL,
+      )
+      const name = getTraderDisplayName(r)
       return {
         userId: r.user_id,
         name,
@@ -77,12 +80,17 @@ export default function Leaderboard() {
   const top3 = ranked.slice(0, 3)
   const medalClass = ['text-orange-500', 'text-gray-400', 'text-orange-500']
 
-  if (loading || priceLoading) return <div className="container pt-6"><PageLoader /></div>
+  if (loading) return <div className="container pt-6"><PageLoader /></div>
   if (error) return <div className="container pt-6"><PageError message={error} /></div>
 
   return (
     <div className="container pt-6 pb-10 space-y-6">
-      <h1 className="text-2xl font-bold text-white">Leaderboard</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-bold text-white">Leaderboard</h1>
+        {(priceLoading || refreshing) && (
+          <span className="text-xs text-gray-500 font-mono">Updating prices…</span>
+        )}
+      </div>
 
       {ranked.length === 0 ? (
         <EmptyState title="No traders yet" message="Run leaderboard SQL and add users." />
@@ -99,8 +107,8 @@ export default function Leaderboard() {
                 <p className="text-primary-400 text-xl font-bold mt-1">
                   ${u.portfolioValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </p>
-                <p className={u.totalReturnPct >= 0 ? 'profit-text text-sm mt-1' : 'loss-text text-sm mt-1'}>
-                  {u.totalReturnPct >= 0 ? '+' : ''}
+                <p className={`text-sm mt-1 ${pnlToneClass(u.totalReturnPct, { zeroClass: 'text-gray-400' })}`}>
+                  {u.totalReturnPct > 0 ? '+' : ''}
                   {u.totalReturnPct.toFixed(2)}%
                 </p>
               </div>
@@ -131,7 +139,8 @@ export default function Leaderboard() {
                 </span>
                 <span>{u.name}</span>
                 <span>${u.portfolioValue.toFixed(2)}</span>
-                <span className={u.totalReturnPct >= 0 ? 'profit-text' : 'loss-text'}>
+                <span className={pnlToneClass(u.totalReturnPct, { zeroClass: 'text-gray-400' })}>
+                  {u.totalReturnPct > 0 ? '+' : ''}
                   {u.totalReturnPct.toFixed(2)}%
                 </span>
                 <span>{u.tradesCount}</span>

@@ -1,62 +1,61 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { getQuote } from '../lib/finnhub'
+import { getQuotes } from '../lib/finnhub'
 import { isMarketOpen } from '../lib/marketHours'
 
-export function useFinnhub(symbols = [], intervalMs = 30000) {
+export function useFinnhub(symbols = [], intervalMs = 60000) {
   const [prices, setPrices] = useState({})
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState(null)
   const symbolsRef = useRef(symbols)
+  const hasPricesRef = useRef(false)
 
   symbolsRef.current = symbols
 
-  const poll = useCallback(async () => {
+  const poll = useCallback(async (isRefresh = false) => {
     const syms = symbolsRef.current.filter(Boolean)
     if (syms.length === 0) {
       setLoading(false)
+      setRefreshing(false)
       return
     }
 
-    if (!isMarketOpen()) {
-      setLoading(false)
-      return
-    }
+    if (isRefresh) setRefreshing(true)
+    else if (!hasPricesRef.current) setLoading(true)
 
     try {
-      const results = await Promise.all(
-        syms.map(async (symbol) => {
-          const quote = await getQuote(symbol)
-          return [symbol, quote]
-        }),
-      )
-      setPrices((prev) => ({
-        ...prev,
-        ...Object.fromEntries(results),
-      }))
+      await getQuotes(syms, {
+        onSymbol: (symbol, quote) => {
+          hasPricesRef.current = true
+          setPrices((prev) => ({ ...prev, [symbol]: quote }))
+          setLoading(false)
+        },
+      })
       setError(null)
     } catch (err) {
       setError(err.message ?? 'Failed to fetch quotes')
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }, [])
 
   useEffect(() => {
     if (!symbols.length) {
       setLoading(false)
-      return
+      return undefined
     }
 
-    setLoading(true)
-    poll()
+    hasPricesRef.current = false
+    poll(false)
 
     if (!isMarketOpen()) {
-      return
+      return undefined
     }
 
-    const id = setInterval(poll, intervalMs)
+    const id = setInterval(() => poll(true), intervalMs)
     return () => clearInterval(id)
   }, [symbols.join(','), intervalMs, poll])
 
-  return { prices, loading, error }
+  return { prices, loading, refreshing, error }
 }

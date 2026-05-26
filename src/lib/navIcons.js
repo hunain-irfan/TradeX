@@ -29,11 +29,12 @@ import {
 /** @type {Record<string, import('lucide-react').LucideIcon>} */
 export const ROUTE_ICONS = {
   '/dashboard': LayoutDashboard,
-  '/search': Search,
+  '/search': TrendingUp,
   '/portfolio': Briefcase,
   '/watchlist': Star,
   '/history': History,
   '/wallet': Wallet,
+  '/alerts': Bell,
   '/leaderboard': Trophy,
   '/profile': User,
   '/settings': Settings,

@@ -4,6 +4,8 @@
 @theme {
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "Roboto Mono", monospace;
+  /* Match TradingView embed typography (profile, financials, symbol info) */
+  --font-tv: -apple-system, BlinkMacSystemFont, "Trebuchet MS", Roboto, Ubuntu, sans-serif;
 
   /* Bloomberg / Signalist Dark Mode Palette */
   --color-gray-900: #0A0A0A; /* Page background */
@@ -37,6 +39,10 @@
 @layer utilities {
   .container {
     @apply mx-auto max-w-screen-2xl px-4 md:px-6 lg:px-8;
+  }
+
+  .font-tv {
+    font-family: var(--font-tv);
   }
 
   .primary-btn {
@@ -177,6 +183,16 @@ td {
   border: none;
 }
 
+.holdings-table td.td-pnl-profit {
+  color: #00c853 !important;
+}
+.holdings-table td.td-pnl-loss {
+  color: #ff3b30 !important;
+}
+.holdings-table td.td-pnl-flat {
+  color: #888888 !important;
+}
+
 tr {
   border-bottom: 1px solid #111111;
 }
@@ -245,7 +261,7 @@ tr:hover {
 
 /* Match TradingView embed widget titles (e.g. NVDA Financials) */
 .tv-widget-title {
-  font-family: -apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif;
+  font-family: var(--font-tv);
   font-size: 28px;
   font-weight: 600;
   line-height: 1.1;
@@ -269,12 +285,30 @@ tr:hover {
   border-radius: 0 !important;
 }
 
-/* Symbol Info only — fixed height; TV embed tries to grow container (~203px) */
+/* Search page stock cards — no padding, full-bleed mini chart */
+.stock-search-card .tv-mini-chart {
+  height: var(--mini-chart-h, 180px) !important;
+  min-height: var(--mini-chart-h, 180px) !important;
+  max-height: var(--mini-chart-h, 180px) !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+}
+.stock-search-card .tv-mini-chart .tradingview-widget-container__widget,
+.stock-search-card .tv-mini-chart iframe {
+  height: 100% !important;
+}
+
+/* Symbol Info — no inner border (outer card in StockDetail already has one) */
 .tv-symbol-info-compact {
   height: var(--symbol-info-h, 185px) !important;
   min-height: var(--symbol-info-h, 185px) !important;
   max-height: var(--symbol-info-h, 185px) !important;
   overflow: hidden !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
   zoom: 0.812;
 }
 @supports not (zoom: 1) {

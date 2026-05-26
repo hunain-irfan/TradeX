@@ -1,8 +1,11 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { ToastProvider } from './components/ui/Toast'
 
-import Layout from './components/layout/Layout'
 import ProtectedRoute from './components/layout/ProtectedRoute'
+import UserRoute from './components/layout/UserRoute'
+import UserLayout from './components/layout/UserLayout'
 import AdminRoute from './components/layout/AdminRoute'
+import AdminLayout from './components/layout/AdminLayout'
 
 import Landing from './pages/Landing'
 import Login from './pages/Login'
@@ -21,15 +24,16 @@ import Leaderboard from './pages/user/Leaderboard'
 import StockDetail from './pages/user/StockDetail'
 import Profile from './pages/user/Profile'
 import Settings from './pages/user/Settings'
+import Alerts from './pages/user/Alerts'
 
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminWallet from './pages/admin/AdminWallet'
-import AdminAnalytics from './pages/admin/AdminAnalytics'
 import AdminLogs from './pages/admin/AdminLogs'
 
 export default function App() {
   return (
+    <ToastProvider>
     <BrowserRouter>
       <Routes>
         {/* PUBLIC */}
@@ -39,9 +43,10 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
 
-        {/* USER — ProtectedRoute → Layout */}
+        {/* USER — trading pages only (admins redirected to /admin) */}
         <Route element={<ProtectedRoute />}>
-          <Route element={<Layout />}>
+          <Route element={<UserRoute />}>
+            <Route element={<UserLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/search" element={<Search />} />
             <Route path="/portfolio" element={<Portfolio />} />
@@ -51,17 +56,18 @@ export default function App() {
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/alerts" element={<Alerts />} />
             <Route path="/stock/:symbol" element={<StockDetail />} />
+            </Route>
           </Route>
         </Route>
 
-        {/* ADMIN — AdminRoute → Layout */}
+        {/* ADMIN — management only (no ticker, no trading nav) */}
         <Route element={<AdminRoute />}>
-          <Route element={<Layout />}>
+          <Route element={<AdminLayout />}>
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/wallet" element={<AdminWallet />} />
-            <Route path="/admin/analytics" element={<AdminAnalytics />} />
             <Route path="/admin/logs" element={<AdminLogs />} />
           </Route>
         </Route>
@@ -70,5 +76,6 @@ export default function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
+    </ToastProvider>
   )
 }

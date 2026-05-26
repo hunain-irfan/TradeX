@@ -1,32 +1,33 @@
 import { Link } from 'react-router-dom'
-import PriceTag from './PriceTag'
-import StockLogo from './StockLogo'
+import MiniChart from '../tradingview/MiniChart'
+import WatchlistStarButton from '../trading/WatchlistStarButton'
 
-export default function StockCard({ symbol, name, quote, onAddWatchlist, adding }) {
-  const price = quote?.c ?? 0
-  const change = quote?.d ?? 0
-  const changePct = quote?.dp ?? 0
-
+export default function StockCard({
+  symbol,
+  inWatchlist,
+  onToggleWatchlist,
+  watchlistLoading,
+}) {
   return (
-    <div className="dashboard-card flex flex-col gap-3">
-      <Link to={`/stock/${symbol}`} className="flex justify-between items-start gap-3 hover:opacity-90">
-        <div className="flex items-center gap-3 min-w-0">
-          <StockLogo symbol={symbol} size={48} />
-          <div className="min-w-0">
-            <p className="font-bold text-white text-lg">{symbol}</p>
-            <p className="text-gray-500 text-sm truncate">{name}</p>
-          </div>
-        </div>
-        <PriceTag price={price} change={change} changePercent={changePct} />
-      </Link>
-      <button
-        type="button"
-        className="watchlist-btn"
-        onClick={() => onAddWatchlist?.(symbol, name)}
-        disabled={adding}
-      >
-        {adding ? 'Adding...' : 'Add to Watchlist'}
-      </button>
+    <div className="stock-search-card p-4 pe-1 ps-2.5 relative overflow-hidden rounded-lg border border-gray-600 bg-[#111111]">
+      <WatchlistStarButton
+        className="absolute top-5 right-3 z-20"
+        inWatchlist={inWatchlist}
+        loading={watchlistLoading}
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          onToggleWatchlist?.()
+        }}
+      />
+      <div className="relative">
+        <MiniChart symbol={symbol} dateRange="1M" />
+        <Link
+          to={`/stock/${symbol}`}
+          className="absolute inset-0 z-10"
+          aria-label={`View ${symbol} details`}
+        />
+      </div>
     </div>
   )
 }

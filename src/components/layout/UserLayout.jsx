@@ -2,7 +2,7 @@ import { Outlet } from 'react-router-dom'
 import Navbar from './Navbar'
 import TickerTape from './TickerTape'
 
-export default function Layout() {
+export default function UserLayout() {
   return (
     <>
       <Navbar />
