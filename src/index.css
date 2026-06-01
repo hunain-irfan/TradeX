@@ -1,0 +1,325 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --font-mono: "Roboto Mono", monospace;
+  /* Match TradingView embed typography (profile, financials, symbol info) */
+  --font-tv: -apple-system, BlinkMacSystemFont, "Trebuchet MS", Roboto, Ubuntu, sans-serif;
+
+  /* Bloomberg / Signalist Dark Mode Palette */
+  --color-gray-900: #0A0A0A; /* Page background */
+  --color-gray-800: #111111; /* Card background */
+  --color-gray-700: #161616; /* Elevated card background */
+  --color-gray-600: #1E1E1E; /* Card border */
+  --color-gray-500: #888888; /* Secondary text */
+  --color-gray-400: #FFFFFF; /* Primary text */
+  --color-gray-300: #CCCCCC;
+  --color-gray-200: #EAEAEA;
+  --color-primary-500: #2962FF; /* Accent Blue */
+  --color-primary-400: #2962FF;
+  --color-green-500: #00C853; /* Profit Green */
+  --color-red-500: #FF3B30; /* Loss Red */
+  --color-brand: #004bff;
+  --color-ink: #0b0f19;
+  --color-lime: #adff00;
+  --color-profit: #00c853;
+  --color-page: #f8fafc;
+  --color-border: #1E1E1E;
+  --color-ring: #2962FF;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  * {
+    @apply border-border outline-ring/30;
+  }
+  body {
+    @apply bg-gray-900 text-white font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .container {
+    @apply mx-auto max-w-screen-2xl px-4 md:px-6 lg:px-8;
+  }
+
+  .font-tv {
+    font-family: var(--font-tv);
+  }
+
+  .primary-btn {
+    @apply h-10 px-4 cursor-pointer bg-primary-500 hover:bg-primary-500/90 text-white font-medium text-sm
+      rounded-md shadow-sm transition-all duration-150 disabled:opacity-50 flex items-center justify-center;
+  }
+
+  .secondary-btn {
+    @apply h-10 px-4 cursor-pointer bg-transparent hover:bg-gray-700 border border-gray-600
+      text-gray-300 hover:text-white font-medium text-sm rounded-md transition-all duration-150 flex items-center justify-center;
+  }
+
+  .dashboard-card {
+    @apply bg-gray-800 border border-gray-600 rounded-lg p-5 shadow-sm;
+  }
+
+  .form-input {
+    @apply h-10 px-4 py-2 text-white text-sm placeholder:text-gray-500
+      border border-gray-600 bg-gray-800 rounded-md focus:border-primary-500
+      focus:ring-0 focus:outline-none w-full;
+  }
+
+  .search-input {
+    @apply bg-gray-800 border border-gray-600 text-gray-200
+      placeholder:text-gray-500 rounded-md h-10 px-4 text-sm
+      focus:border-primary-500 focus:ring-0 focus:outline-none;
+  }
+
+  .watchlist-table {
+    @apply w-full overflow-hidden bg-gray-800 border border-gray-600 rounded-lg;
+  }
+
+  .table-header-row {
+    @apply bg-transparent border-b border-gray-600 text-gray-500 font-mono;
+  }
+
+  .data-row {
+    @apply border-b border-gray-600/30 text-gray-300
+      hover:bg-gray-700 transition-colors;
+  }
+
+  .profit-text {
+    @apply text-green-500 font-semibold font-mono;
+  }
+  .loss-text {
+    @apply text-red-500 font-semibold font-mono;
+  }
+
+  .watchlist-btn {
+    @apply bg-primary-500 hover:bg-primary-500/90 text-white w-full
+      rounded-md h-9 font-medium text-xs transition-all duration-150 cursor-pointer flex items-center justify-center;
+  }
+
+  .icon-btn {
+    @apply w-9 h-9 rounded-full flex items-center justify-center
+      bg-gray-700/60 hover:bg-primary-500/20 text-gray-300
+      hover:text-primary-400 transition-all duration-150;
+  }
+
+  /* Finnhub logos: left-align in box (PNG padding varies per symbol) */
+  .stock-logo-img {
+    image-rendering: auto;
+  }
+
+  .news-item {
+    @apply bg-gray-800 rounded-lg border border-gray-600 p-5
+      hover:border-primary-500/40 hover:bg-gray-700/30 transition-all duration-150 cursor-pointer;
+  }
+
+  .news-tag {
+    @apply inline-block px-2 py-0.5 rounded bg-primary-500/10
+      text-primary-400 text-xs font-semibold uppercase tracking-wider;
+  }
+
+  .news-title {
+    @apply text-base font-semibold text-white leading-snug mb-2;
+  }
+  .news-summary {
+    @apply text-gray-500 text-sm leading-relaxed;
+  }
+}
+
+/* Global Tables Styling (Signalist / Bloomberg style) */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  border: none;
+}
+
+thead {
+  background-color: transparent;
+  border-bottom: 1px solid #222222;
+}
+
+th {
+  font-size: 11px;
+  font-weight: 500;
+  color: #555555;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 16px;
+  height: 36px;
+  border: none;
+}
+
+/* Grid-based tables (watchlist, history) — header/value same alignment */
+.app-grid-row {
+  display: grid;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+
+.app-grid-row .cell-num {
+  text-align: right;
+  justify-self: end;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.app-grid-row .cell-stock {
+  min-width: 0;
+}
+
+.watchlist-grid {
+  grid-template-columns: minmax(12rem, 1.5fr) 5.5rem 5.5rem 4.5rem 5.5rem;
+}
+
+.history-grid {
+  grid-template-columns: 9.5rem minmax(5.5rem, 0.9fr) 3.5rem 3rem 5rem 5.5rem 6.5rem 5.5rem;
+}
+
+td {
+  font-size: 13px;
+  color: #CCCCCC;
+  padding: 0 16px;
+  height: 48px;
+  border: none;
+}
+
+.holdings-table td.td-pnl-profit {
+  color: #00c853 !important;
+}
+.holdings-table td.td-pnl-loss {
+  color: #ff3b30 !important;
+}
+.holdings-table td.td-pnl-flat {
+  color: #888888 !important;
+}
+
+tr {
+  border-bottom: 1px solid #111111;
+}
+
+tr:hover {
+  background-color: #161616;
+  transition: background-color 0.1s ease;
+}
+
+/* Global Scrollbar Overrides */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #444444;
+}
+
+/* Custom Bloomberg-style Ticker & Widget Skins */
+.tradingview-widget-container {
+  background-color: #111111 !important;
+  border: 1px solid #1e1e1e !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+.tradingview-widget-container.ticker-tape-container {
+  background-color: #0A0A0A !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+  border-bottom: 1px solid #1A1A1A !important;
+  border-radius: 0px !important;
+}
+.tradingview-widget-container iframe {
+  width: 100% !important;
+  background-color: transparent !important;
+}
+
+/* Hide TradingView footer / copyright link on embeds */
+.tradingview-widget-container.tv-hide-copyright .tradingview-widget-copyright,
+.tradingview-widget-container.tv-hide-copyright a[href*="tradingview.com"] {
+  display: none !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+}
+
+/* Dashboard Top Stories — hide iframe header row (no embed option) */
+.tv-financial-news {
+  overflow: hidden !important;
+}
+.tv-financial-news .tradingview-widget-container__widget {
+  margin-top: -52px;
+  height: calc(100% + 52px) !important;
+}
+.tv-financial-news iframe {
+  display: block;
+}
+
+/* Match TradingView embed widget titles (e.g. NVDA Financials) */
+.tv-widget-title {
+  font-family: var(--font-tv);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: #dbdbdb;
+  letter-spacing: normal;
+  text-transform: none;
+  margin-bottom: 20px;
+}
+
+.tv-financial-news{
+  margin-top: -47px;
+}
+
+.tv-widget-title span {
+  color: #2962ff;
+}
+
+/* Advanced chart — no extra widget border (card wrapper already has one) */
+.tradingview-widget-container.custom-chart {
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+/* Search page stock cards — no padding, full-bleed mini chart */
+.stock-search-card .tv-mini-chart {
+  height: var(--mini-chart-h, 180px) !important;
+  min-height: var(--mini-chart-h, 180px) !important;
+  max-height: var(--mini-chart-h, 180px) !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+}
+.stock-search-card .tv-mini-chart .tradingview-widget-container__widget,
+.stock-search-card .tv-mini-chart iframe {
+  height: 100% !important;
+}
+
+/* Symbol Info — no inner border (outer card in StockDetail already has one) */
+.tv-symbol-info-compact {
+  height: var(--symbol-info-h, 185px) !important;
+  min-height: var(--symbol-info-h, 185px) !important;
+  max-height: var(--symbol-info-h, 185px) !important;
+  overflow: hidden !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  zoom: 0.812;
+}
+@supports not (zoom: 1) {
+  .tv-symbol-info-compact {
+    transform: scale(0.82);
+    transform-origin: top left;
+    width: 121.95% !important;
+  }
+}

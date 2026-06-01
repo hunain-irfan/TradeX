@@ -1,0 +1,183 @@
+================================================================================
+TRADEX — PROJECT SUMMARY (FULL CODEBASE REFERENCE)
+================================================================================
+Last updated: 2026-05-26
+Repository: TradeX (paper trading web app)
+Status: Phases 1–11 + Alerts + Profile/Settings + admin polish; production build OK
+Stack: React 19 + Vite 6 + Tailwind CSS 4 + Supabase + Finnhub + Recharts +
+       TradingView embeds + Lucide React
+
+================================================================================
+0. PROJECT OVERVIEW
+================================================================================
+
+TradeX is a browser-only paper trading platform. Users get a virtual $10,000
+wallet on signup, trade 20 default US stocks (100 in data file) at live Finnhub
+prices, compete on a leaderboard, and set price alerts with optional email.
+Admins manage users, fund requests, and audit logs via Supabase RPCs.
+
+Architecture:
+
+  Browser (React SPA)
+    ├── Supabase Auth + Postgres (RLS) — users, wallets, trades, watchlist, alerts
+    ├── Finnhub REST — quotes, news (queued + cache)
+    ├── Finnhub WebSocket — Dashboard, Portfolio, Watchlist (throttled UI)
+    ├── Finnhub CDN — stock logos
+    └── TradingView CDN — charts, tape, widgets
+
+Documentation:
+  README.md                      — Quick start, deploy
+  supabase/SUPABASE_SETUP.md     — Supabase setup (SQL, Auth, emails)
+  supabase/ALERTS_SUPABASE_SETUP.md — Price alerts + Resend email
+  FIXES_TODO.md                  — Known issues & future fixes (read before prod)
+  PROJECT_SUMMARY.txt            — This file
+
+================================================================================
+1. COLOR THEME, FONTS & DESIGN SYSTEM
+================================================================================
+
+Source: src/index.css (@theme + utilities)
+
+  Backgrounds: #0A0A0A page, #111111 cards, #161616 hover, #1E1E1E borders
+  Accent: #2962FF (primary blue)
+  P&L: #00C853 profit, #FF3B30 loss
+
+Fonts: Inter (UI), Roboto Mono (prices/tables)
+
+Brand:
+  public/logo.png     — Navbar, auth
+  public/favicon.png  — Browser tab (index.html)
+
+================================================================================
+2. FOLDER STRUCTURE
+================================================================================
+
+TradeX/
+├── FIXES_TODO.md
+├── PROJECT_SUMMARY.txt
+├── README.md
+├── index.html
+├── package.json
+├── public/
+│   ├── favicon.png
+│   └── logo.png
+├── supabase/
+│   ├── SUPABASE_SETUP.md
+│   ├── ALERTS_SUPABASE_SETUP.md
+│   ├── phase5-schema.sql
+│   ├── fix-user-trigger.sql
+│   ├── phase10-leaderboard.sql
+│   ├── phase11-admin-rpc.sql
+│   ├── add-wallet-total-deposited.sql
+│   ├── add-transaction-buy-price.sql
+│   ├── add-alerts-extended.sql
+│   ├── add-leaderboard-display-name.sql
+│   ├── fix-exclude-admins-from-trader-views.sql
+│   ├── fix-admin-realized-pnl.sql
+│   ├── functions/send-price-alert/
+│   └── email-templates/
+└── src/
+    ├── App.jsx, main.jsx, index.css
+    ├── data/stocks.js          # 100 stocks; DEFAULT_TOP_SYMBOLS (20) for Search/Alerts
+    ├── lib/                    # supabase, finnhub, trading, admin, alerts, portfolioMetrics
+    ├── hooks/
+    ├── components/
+    └── pages/
+        ├── user/               # Dashboard … Alerts, StockDetail
+        └── admin/              # Dashboard, Users, Wallet (fund requests), Logs
+
+Removed (do not restore):
+  - public/logo-old.png
+  - AdminAnalytics.jsx (analytics live in AdminDashboard.jsx)
+  - Legacy landing HTML
+
+================================================================================
+3. DEPENDENCIES & BUILD
+================================================================================
+
+  react ^19, react-router-dom ^7, @supabase/supabase-js ^2
+  recharts, lucide-react, vite ^6, tailwindcss ^4
+
+  npm run dev | build | preview
+
+  Env: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_FINNHUB_KEY
+
+================================================================================
+4. ROUTING
+================================================================================
+
+PUBLIC: /, /login, /verify-email, /forgot-password, /reset-password
+
+USER (ProtectedRoute + UserRoute + UserLayout + Navbar + TickerTape):
+  /dashboard, /search, /portfolio, /watchlist, /history, /wallet
+  /leaderboard, /alerts, /profile, /settings, /stock/:symbol
+
+ADMIN (AdminRoute + AdminLayout — no ticker):
+  /admin, /admin/users, /admin/wallet, /admin/logs
+
+================================================================================
+5. KEY FEATURES
+================================================================================
+
+Trading: Buy/sell at live quote; weighted avg buy_price; SELL stores buy_price
+Portfolio: Live WS prices; Total Value, Invested, Unrealized P&L; table Total Buy
+Dashboard: Account value, total return % vs total_deposited, today P&L
+Leaderboard: display_name; admins excluded (with fix SQL)
+Alerts: Modal, 20 stocks, Above/Low; email via edge function + Resend
+Admin: Users, fund requests, logs, analytics on dashboard; admin balance hidden in table
+
+Recent safe fixes (2026-05-26):
+  [x] Latest 50 transactions for history/undo/P&L charts
+  [x] Undo sell uses buy_price from transaction
+  [x] Fund approve idempotent (pending only)
+  [x] Admin realized P&L SQL fix (not cash flow)
+  [x] Buy/Sell modal: live price, cash, holdings context
+  [x] Navbar wallet balance; favicon
+
+================================================================================
+6. P&L & METRICS (IMPORTANT)
+================================================================================
+
+  Unrealized P&L (Portfolio) = market value of holdings − cost basis
+  Realized P&L (Admin)     = sum of (sell proceeds − cost) on SELL rows only
+  Total return %           = (cash + holdings) vs wallets.total_deposited
+
+  Realized $0 with many buys = normal if few/no sells
+
+================================================================================
+7. SUPABASE SQL ORDER
+================================================================================
+
+See SUPABASE_SETUP.md. After phase11, also run as needed:
+  add-wallet-total-deposited.sql
+  add-transaction-buy-price.sql
+  add-alerts-extended.sql
+  fix-admin-realized-pnl.sql
+  fix-exclude-admins-from-trader-views.sql (optional)
+
+Alerts email: ALERTS_SUPABASE_SETUP.md
+
+================================================================================
+8. BEFORE PRODUCTION (see FIXES_TODO.md)
+================================================================================
+
+Must fix for public deploy:
+  - RLS: block direct wallet/portfolio/transaction writes
+  - Admin role in app_metadata, not user_metadata
+  - Secure send-price-alert edge function
+  - Atomic trade RPC
+
+================================================================================
+9. QUICK REFERENCE
+================================================================================
+
+  New bug / tech debt     → FIXES_TODO.md
+  Supabase setup          → supabase/SUPABASE_SETUP.md
+  Alert email setup       → supabase/ALERTS_SUPABASE_SETUP.md
+  Add stock (default 20)  → src/data/stocks.js DEFAULT_TOP_SYMBOLS
+  Theme                   → src/index.css
+  Trade logic             → src/lib/trading.js
+
+================================================================================
+END OF SUMMARY
+================================================================================
