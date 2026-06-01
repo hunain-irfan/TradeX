@@ -5,6 +5,7 @@ import { useWalletBalance } from '../../hooks/useWalletBalance'
 import { supabase } from '../../lib/supabase'
 import { getTraderDisplayName } from '../../lib/userDisplay'
 import Logo from './Logo'
+import MarketStatus from './MarketStatus'
 import {
   ROUTE_ICONS,
   ChevronDown,
@@ -13,6 +14,7 @@ import {
   User,
   Settings,
   LogOut,
+  Home,
 } from '../../lib/navIcons'
 
 const MAIN_LINKS = [
@@ -166,7 +168,8 @@ export default function Navbar() {
           </Dropdown>
         </nav>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-4 shrink-0">
+          <MarketStatus />
           <Link
             to="/wallet"
             className="flex flex-col items-end leading-tight hover:opacity-90 transition-opacity shrink-0"
@@ -190,6 +193,9 @@ export default function Navbar() {
               </button>
             }
           >
+            <DropdownLink to="/" icon={Home}>
+              Homepage
+            </DropdownLink>
             <DropdownLink to="/profile" icon={User}>
               Profile
             </DropdownLink>

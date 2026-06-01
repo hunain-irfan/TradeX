@@ -24,6 +24,7 @@ import {
   Minus,
   Lock,
   Bell,
+  Home,
 } from 'lucide-react'
 
 /** @type {Record<string, import('lucide-react').LucideIcon>} */
@@ -66,4 +67,6 @@ export {
   Minus,
   Lock,
   Bell,
+  Home,
 }
+
