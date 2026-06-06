@@ -98,7 +98,11 @@ DECLARE
 BEGIN
   PERFORM public.admin_require_admin();
   SELECT jsonb_build_object(
-    'total_users', (SELECT COUNT(*)::int FROM auth.users),
+    'total_users', (
+      SELECT COUNT(*)::int
+      FROM auth.users u
+      WHERE COALESCE(u.raw_user_meta_data->>'role', 'user') <> 'admin'
+    ),
     'active_trades_today', (
       SELECT COUNT(*)::int FROM public.transactions
       WHERE created_at::date = CURRENT_DATE
@@ -126,13 +130,24 @@ BEGIN
   PERFORM public.admin_require_admin();
   SELECT jsonb_build_object(
     'daily_signups', (
-      SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::jsonb)
+      SELECT COALESCE(jsonb_agg(row_to_json(t) ORDER BY t.date), '[]'::jsonb)
       FROM (
-        SELECT created_at::date AS date, COUNT(*)::int AS count
-        FROM auth.users
-        WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
-        GROUP BY created_at::date
-        ORDER BY date
+        SELECT
+          d.day::date AS date,
+          COALESCE(s.cnt, 0)::int AS count
+        FROM generate_series(
+          CURRENT_DATE - INTERVAL '29 days',
+          CURRENT_DATE,
+          INTERVAL '1 day'
+        ) AS d(day)
+        LEFT JOIN (
+          SELECT u.created_at::date AS signup_date, COUNT(*)::int AS cnt
+          FROM auth.users u
+          WHERE u.created_at >= CURRENT_DATE - INTERVAL '29 days'
+            AND COALESCE(u.raw_user_meta_data->>'role', 'user') <> 'admin'
+          GROUP BY u.created_at::date
+        ) s ON s.signup_date = d.day::date
+        ORDER BY d.day
       ) t
     ),
     'most_traded', (
@@ -175,7 +190,7 @@ BEGIN
         LEFT JOIN public.transactions tr ON tr.user_id = u.id
         WHERE COALESCE(u.raw_user_meta_data->>'role', 'user') <> 'admin'
         GROUP BY u.id, u.email, w.balance
-        ORDER BY w.balance DESC NULLS LAST
+        ORDER BY net_flow DESC NULLS LAST, trades_count DESC, w.balance DESC NULLS LAST
         LIMIT 5
       ) t
     )

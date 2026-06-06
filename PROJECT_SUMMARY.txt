@@ -1,11 +1,12 @@
 ================================================================================
 TRADEX — PROJECT SUMMARY (FULL CODEBASE REFERENCE)
 ================================================================================
-Last updated: 2026-05-26
+Last updated: 2026-06-06 (post-fixes + cleanup)
 Repository: TradeX (paper trading web app)
-Status: Phases 1–11 + Alerts + Profile/Settings + admin polish; production build OK
+Status: Demo/academic ready — Vite production build OK
+        NOT production-safe until §8 security blockers are fixed
 Stack: React 19 + Vite 6 + Tailwind CSS 4 + Supabase + Finnhub + Recharts +
-       TradingView embeds + Lucide React
+       TradingView embeds + Lucide React + Framer Motion + Swiper
 
 ================================================================================
 0. PROJECT OVERVIEW
@@ -14,7 +15,7 @@ Stack: React 19 + Vite 6 + Tailwind CSS 4 + Supabase + Finnhub + Recharts +
 TradeX is a browser-only paper trading platform. Users get a virtual $10,000
 wallet on signup, trade 20 default US stocks (100 in data file) at live Finnhub
 prices, compete on a leaderboard, and set price alerts with optional email.
-Admins manage users, fund requests, and audit logs via Supabase RPCs.
+Admins manage traders, fund requests, and audit logs via Supabase RPCs.
 
 Architecture:
 
@@ -22,15 +23,18 @@ Architecture:
     ├── Supabase Auth + Postgres (RLS) — users, wallets, trades, watchlist, alerts
     ├── Finnhub REST — quotes, news (queued + cache)
     ├── Finnhub WebSocket — Dashboard, Portfolio, Watchlist (throttled UI)
-    ├── Finnhub CDN — stock logos
-    └── TradingView CDN — charts, tape, widgets
+    ├── Finnhub CDN + TradingView SVG — stock logos (fallback chain)
+    ├── TradingView CDN — charts, tape, widgets
+    └── Supabase Edge Function — send-price-alert (Resend email)
 
 Documentation:
   README.md                      — Quick start, deploy
-  supabase/SUPABASE_SETUP.md     — Supabase setup (SQL, Auth, emails)
-  supabase/ALERTS_SUPABASE_SETUP.md — Price alerts + Resend email
-  FIXES_TODO.md                  — Known issues & future fixes (read before prod)
-  PROJECT_SUMMARY.txt            — This file
+  supabase/SUPABASE_SETUP.md     — Supabase setup (SQL, Auth, emails, alerts §11)
+  PROJECT_SUMMARY.txt            — This file (includes production checklist §8)
+
+DSA module (academic):
+  src/lib/dsa.js — PortfolioMap (HashMap), TransactionStack (Stack),
+                   binarySearch, sortByField
 
 ================================================================================
 1. COLOR THEME, FONTS & DESIGN SYSTEM
@@ -41,30 +45,35 @@ Source: src/index.css (@theme + utilities)
   Backgrounds: #0A0A0A page, #111111 cards, #161616 hover, #1E1E1E borders
   Accent: #2962FF (primary blue)
   P&L: #00C853 profit, #FF3B30 loss
+  Admin charts: #2962FF line/bar, #1E1E1E grid
 
 Fonts: Inter (UI), Roboto Mono (prices/tables)
 
 Brand:
-  public/logo.png     — Navbar, auth
+  public/logo.png     — Navbar, auth, landing
   public/favicon.png  — Browser tab (index.html)
+
+Landing page: src/pages/HomePage.jsx — Framer Motion + Swiper carousel
 
 ================================================================================
 2. FOLDER STRUCTURE
 ================================================================================
 
 TradeX/
-├── FIXES_TODO.md
+├── .env.example
+├── .gitignore                   — includes supabase/.temp/, *.docx
 ├── PROJECT_SUMMARY.txt
 ├── README.md
 ├── index.html
 ├── package.json
+├── package-lock.json
+├── vercel.json                  — SPA rewrite
 ├── public/
 │   ├── favicon.png
 │   └── logo.png
 ├── supabase/
 │   ├── SUPABASE_SETUP.md
-│   ├── ALERTS_SUPABASE_SETUP.md
-│   ├── phase5-schema.sql
+│   ├── phase5-schema.sql        — Base schema + RLS + triggers (+ tx DELETE)
 │   ├── fix-user-trigger.sql
 │   ├── phase10-leaderboard.sql
 │   ├── phase11-admin-rpc.sql
@@ -74,33 +83,52 @@ TradeX/
 │   ├── add-leaderboard-display-name.sql
 │   ├── fix-exclude-admins-from-trader-views.sql
 │   ├── fix-admin-realized-pnl.sql
-│   ├── functions/send-price-alert/
-│   └── email-templates/
+│   ├── fix-transaction-delete-policy.sql  — Undo support (legacy DBs)
+│   ├── fix-admin-dashboard-stats.sql      — Admin count + signups chart
+│   ├── functions/send-price-alert/index.ts
+│   └── email-templates/         — confirm-signup, reset-password, price-alert
 └── src/
     ├── App.jsx, main.jsx, index.css
-    ├── data/stocks.js          # 100 stocks; DEFAULT_TOP_SYMBOLS (20) for Search/Alerts
-    ├── lib/                    # supabase, finnhub, trading, admin, alerts, portfolioMetrics
+    ├── data/stocks.js           — 100 stocks; getStockName(); DEFAULT_TOP_SYMBOLS (20)
+    ├── lib/                     — supabase, finnhub, trading, admin, alerts, dsa, stockLogo
     ├── hooks/
+    │   ├── useWalletBalance.jsx — WalletBalanceProvider + navbar balance refresh
+    │   ├── usePortfolio.js, useTransactions.js, useAlertChecker.js, …
     ├── components/
+    │   ├── layout/              — Navbar, UserLayout, FrozenBanner, GlobalAlertChecker, …
+    │   ├── trading/             — BuySellModal (trade confirm + balance refresh)
+    │   ├── tradingview/
+    │   ├── charts/              — PortfolioPie, LeaderboardBar (PnLArea removed)
+    │   ├── alerts/
+    │   └── ui/                  — PasswordInput, StockLogo, StockSymbolCell, Toast, …
     └── pages/
-        ├── user/               # Dashboard … Alerts, StockDetail
-        └── admin/              # Dashboard, Users, Wallet (fund requests), Logs
+        ├── user/                — Dashboard … Alerts, StockDetail
+        └── admin/               — Dashboard, Users, Wallet, Logs
 
 Removed (do not restore):
-  - public/logo-old.png
-  - AdminAnalytics.jsx (analytics live in AdminDashboard.jsx)
-  - Legacy landing HTML
+  - public/logo-old.png, AdminAnalytics.jsx, legacy landing HTML
+  - PnLArea.jsx (cumulative P&L chart removed from Portfolio)
+  - scripts/ doc generators, *.docx report files
+  - signInWithGoogle (useAuth) — removed, no OAuth UI
+  - FIXES_TODO.md, ALERTS_SUPABASE_SETUP.md — never created; see §8 / SUPABASE_SETUP §11
+
+Not present: tests, CI, ESLint/Prettier, supabase/config.toml
 
 ================================================================================
 3. DEPENDENCIES & BUILD
 ================================================================================
 
-  react ^19, react-router-dom ^7, @supabase/supabase-js ^2
-  recharts, lucide-react, vite ^6, tailwindcss ^4
+  react ^19, react-dom ^19, react-router-dom ^7
+  @supabase/supabase-js ^2
+  recharts, lucide-react, framer-motion, swiper
+  vite ^6, tailwindcss ^4
 
   npm run dev | build | preview
 
-  Env: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_FINNHUB_KEY
+  Env (frontend): VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_FINNHUB_KEY
+  Env (edge): RESEND_API_KEY, ALERT_FROM_EMAIL
+
+  Build: npm run build OK (~1.28 MB JS chunk — consider code-splitting)
 
 ================================================================================
 4. ROUTING
@@ -108,75 +136,185 @@ Removed (do not restore):
 
 PUBLIC: /, /login, /verify-email, /forgot-password, /reset-password
 
-USER (ProtectedRoute + UserRoute + UserLayout + Navbar + TickerTape):
+USER (ProtectedRoute + UserRoute + UserLayout):
+  Navbar + TickerTape + WalletBalanceProvider + GlobalAlertChecker + FrozenBanner
   /dashboard, /search, /portfolio, /watchlist, /history, /wallet
   /leaderboard, /alerts, /profile, /settings, /stock/:symbol
 
 ADMIN (AdminRoute + AdminLayout — no ticker):
   /admin, /admin/users, /admin/wallet, /admin/logs
 
-================================================================================
-5. KEY FEATURES
-================================================================================
+404: /* → NotFound.jsx
 
-Trading: Buy/sell at live quote; weighted avg buy_price; SELL stores buy_price
-Portfolio: Live WS prices; Total Value, Invested, Unrealized P&L; table Total Buy
-Dashboard: Account value, total return % vs total_deposited, today P&L
-Leaderboard: display_name; admins excluded (with fix SQL)
-Alerts: Modal, 20 stocks, Above/Low; email via edge function + Resend
-Admin: Users, fund requests, logs, analytics on dashboard; admin balance hidden in table
-
-Recent safe fixes (2026-05-26):
-  [x] Latest 50 transactions for history/undo/P&L charts
-  [x] Undo sell uses buy_price from transaction
-  [x] Fund approve idempotent (pending only)
-  [x] Admin realized P&L SQL fix (not cash flow)
-  [x] Buy/Sell modal: live price, cash, holdings context
-  [x] Navbar wallet balance; favicon
+Admins redirected away from user trading routes (UserRoute).
 
 ================================================================================
-6. P&L & METRICS (IMPORTANT)
+5. FEATURE INVENTORY
 ================================================================================
 
-  Unrealized P&L (Portfolio) = market value of holdings − cost basis
-  Realized P&L (Admin)     = sum of (sell proceeds − cost) on SELL rows only
-  Total return %           = (cash + holdings) vs wallets.total_deposited
+AUTH & ACCOUNT
+  [x] Email signup / login / sign out / forgot / reset password
+  [x] Email verification page + resend (Settings)
+  [x] Password fields — show/hide toggle (PasswordInput on Login, Reset, Settings)
+  [~] Email verification NOT enforced for trading
 
-  Realized $0 with many buys = normal if few/no sells
+TRADING & PORTFOLIO
+  [x] Buy/sell at live Finnhub quote (client-side)
+  [x] BuySellModal — optional 2-step confirm (Settings trade_confirm, default ON)
+  [x] Weighted avg buy_price; SELL stores buy_price
+  [x] Portfolio live WS prices; unrealized P&L
+  [x] Dashboard metrics, stock search (binarySearch on sorted STOCK_LIST)
+  [x] Stock detail + TradingView widgets
+  [x] Watchlist — add with validation; no confusing "Live" WS label
+
+HISTORY & WALLET
+  [x] History — filter, CSV, realized P&L; STOCK_LIST names; error display
+  [x] Undo last trade (5 min) — stack + buy_price restore; needs DELETE RLS/SQL
+  [x] Navbar balance refreshes after buy/sell/undo (WalletBalanceProvider)
+
+SOCIAL & ALERTS
+  [x] Leaderboard — sortByField by portfolio value; admins excluded
+  [x] Price alerts + GlobalAlertChecker on all user pages
+  [~] Alert email via edge function when Resend configured
+
+PROFILE & SETTINGS
+  [x] Profile, Settings (name, password, email prefs, trade_confirm)
+
+ADMIN
+  [x] Dashboard — traders only in Total Users; top traders by realized P&L
+  [x] Daily signups chart (traders only, sparse original style)
+  [x] User Management — traders only; no Make/Remove Admin buttons
+  [x] Fund requests, audit logs, ban/freeze/reset/delete
+
+UI / ASSETS
+  [x] Stock logos — Finnhub PNG → alias (META→FB) → TradingView SVG fallback
+  [x] Frozen account — amber banner on all user pages
+  [x] Meta company name via getStockName() in StockSymbolCell
+
+LANDING & DEPLOY
+  [x] HomePage (Framer Motion + Swiper), vercel.json, npm run build OK
 
 ================================================================================
-7. SUPABASE SQL ORDER
+6. DSA MODULE (src/lib/dsa.js)
 ================================================================================
 
-See SUPABASE_SETUP.md. After phase11, also run as needed:
-  add-wallet-total-deposited.sql
-  add-transaction-buy-price.sql
-  add-alerts-extended.sql
-  fix-admin-realized-pnl.sql
-  fix-exclude-admins-from-trader-views.sql (optional)
-
-Alerts email: ALERTS_SUPABASE_SETUP.md
+  PortfolioMap     — HashMap (Map) — O(1) holdings by symbol — usePortfolio.js
+  TransactionStack — Stack LIFO    — O(1) push/pop/peek — useTransactions.js
+  binarySearch     — O(log n) on sorted STOCK_LIST — Search.jsx
+  sortByField      — O(n log n) generic sort — Portfolio.jsx, Leaderboard.jsx
 
 ================================================================================
-8. BEFORE PRODUCTION (see FIXES_TODO.md)
+7. P&L & METRICS
 ================================================================================
 
-Must fix for public deploy:
-  - RLS: block direct wallet/portfolio/transaction writes
-  - Admin role in app_metadata, not user_metadata
-  - Secure send-price-alert edge function
-  - Atomic trade RPC
+  Unrealized P&L = holdings market value − cost basis
+  Realized P&L   = sum(sell proceeds − cost) on SELL rows
+  Total return % = account value vs wallets.total_deposited
+  Admin Top Traders ranked by realized P&L (net_flow), not wallet balance
 
 ================================================================================
-9. QUICK REFERENCE
+8. KNOWN REMAINING ISSUES
 ================================================================================
 
-  New bug / tech debt     → FIXES_TODO.md
+REQUIRES SUPABASE SQL ON DEPLOYED DB (if not yet run):
+  - fix-transaction-delete-policy.sql — undo needs transaction DELETE policy
+  - fix-admin-dashboard-stats.sql — optional; frontend computes trader stats too
+
+SECURITY (P0 — before public production):
+  - Admin role in user_metadata (should be app_metadata)
+  - Client-side trading; permissive RLS on wallets/portfolios
+  - Unauthenticated send-price-alert edge function
+  - Finnhub key visible in client bundle
+
+MINOR / FUTURE:
+  - Email verification not enforced
+  - No atomic execute_trade RPC
+  - No automated tests / CI
+  - README still says "4 SQL files" vs 9 in SUPABASE_SETUP
+
+FIXED IN 2026-06-06 SESSION (no longer open):
+  - Undo BUY buy_price restore; useTransactions error handling
+  - executeSell error checks; History stock names
+  - trade_confirm wired; GlobalAlertChecker; FrozenBanner
+  - Watchlist Add validation; password eye toggle
+  - Navbar balance live refresh; stock logo cache/fallbacks
+  - Admin trader-only counts; top traders by P&L; Users page cleanup
+  - Portfolio PnLArea chart removed; dead code/docs cleanup
+
+================================================================================
+9. BEFORE PRODUCTION — SECURITY CHECKLIST
+================================================================================
+
+P0: app_metadata admin role | tight RLS | execute_trade RPC | secure edge fn
+P1: email verification | Finnhub proxy | README/SQL doc alignment
+P2: code-split bundle | Vitest | CI build on PR
+
+================================================================================
+10. SUPABASE SQL ORDER
+================================================================================
+
+See supabase/SUPABASE_SETUP.md §2. Fresh project:
+
+  1. phase5-schema.sql          (includes transactions DELETE for undo)
+  2. fix-user-trigger.sql
+  3. phase10-leaderboard.sql
+  4. phase11-admin-rpc.sql
+  5. add-alerts-extended.sql
+  6. fix-exclude-admins-from-trader-views.sql
+  7. fix-admin-realized-pnl.sql
+
+Legacy DBs also run: fix-transaction-delete-policy.sql, fix-admin-dashboard-stats.sql,
+  add-wallet-total-deposited.sql, add-transaction-buy-price.sql as needed.
+
+Alert email: SUPABASE_SETUP.md §11
+
+================================================================================
+11. RLS SUMMARY (phase5-schema.sql — current)
+================================================================================
+
+  wallets       — user SELECT + INSERT + UPDATE (balance!) — security risk
+  portfolios    — user full CRUD
+  transactions  — user SELECT + INSERT + DELETE (undo); no UPDATE
+  watchlist, alerts — user full CRUD
+  fund_requests — user SELECT + INSERT
+  admin_logs, alert_email_log — as documented in prior schema
+
+================================================================================
+12. RECENT CHANGELOG
+================================================================================
+
+2026-05-26: History 50 tx limit, undo sell buy_price, fund approve idempotent,
+            admin P&L SQL fix, BuySellModal context, navbar balance, favicon
+
+2026-06-06:
+  Audit + fixes:
+    - useTransactions errors + undo buy_price; executeSell errors
+    - WalletBalanceProvider; GlobalAlertChecker; FrozenBanner
+    - BuySellModal trade_confirm; PasswordInput; Watchlist fixes
+    - stockLogo v2 + META FB alias + TradingView SVG fallback
+    - getStockName; admin trader-only stats; top traders by P&L
+    - AdminUsers hide admins; remove role toggle buttons
+    - Portfolio: removed PnLArea chart
+    - phase5 + fix-transaction-delete-policy.sql; fix-admin-dashboard-stats.sql
+    - .gitignore: supabase/.temp/, *.docx
+    - Removed: doc scripts, signInWithGoogle, PnLArea.jsx
+    - PROJECT_SUMMARY.txt updated
+
+================================================================================
+13. QUICK REFERENCE
+================================================================================
+
+  Production blockers     → §9
   Supabase setup          → supabase/SUPABASE_SETUP.md
-  Alert email setup       → supabase/ALERTS_SUPABASE_SETUP.md
-  Add stock (default 20)  → src/data/stocks.js DEFAULT_TOP_SYMBOLS
-  Theme                   → src/index.css
+  DSA implementations     → src/lib/dsa.js
   Trade logic             → src/lib/trading.js
+  Stock logos             → src/lib/stockLogo.js
+  Wallet navbar refresh   → src/hooks/useWalletBalance.jsx
+  Alert checker (global)  → src/components/layout/GlobalAlertChecker.jsx
+  Undo SQL (legacy DB)    → supabase/fix-transaction-delete-policy.sql
+  Admin stats SQL         → supabase/fix-admin-dashboard-stats.sql
+  Default 20 stocks       → src/data/stocks.js DEFAULT_TOP_SYMBOLS
+  Theme                   → src/index.css
 
 ================================================================================
 END OF SUMMARY

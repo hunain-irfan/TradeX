@@ -5,31 +5,17 @@ import { useAuth } from '../../hooks/useAuth'
 import { usePortfolio } from '../../hooks/usePortfolio'
 
 import { useFinnhubSocket } from '../../hooks/useFinnhubSocket'
-import { useAlertChecker } from '../../hooks/useAlertChecker'
 
 import { sortByField } from '../../lib/dsa'
+import { preloadStockLogos } from '../../lib/stockLogo'
 
 import BuySellModal from '../../components/trading/BuySellModal'
-
-import PnLArea from '../../components/charts/PnLArea'
-
-import { useTransactions } from '../../hooks/useTransactions'
 
 import StockSymbolCell from '../../components/ui/StockSymbolCell'
 
 import { PageLoader, EmptyState } from '../../components/ui/PageState'
 
-import {
-
-  buildSellCostBasisByTxId,
-
-  computeRealizedPnl,
-
-  pnlTableCellClass,
-
-  pnlToneClass,
-
-} from '../../lib/portfolioMetrics'
+import { pnlTableCellClass, pnlToneClass } from '../../lib/portfolioMetrics'
 
 
 
@@ -39,16 +25,17 @@ export default function Portfolio() {
 
   const { holdings, loading, refresh, updateLivePrices } = usePortfolio()
 
-  const { transactions, loading: txLoading, refresh: refreshTx } = useTransactions()
-
   const [sort, setSort] = useState('value')
 
   const [modal, setModal] = useState(null)
 
   const symbols = useMemo(() => holdings.map((h) => h.symbol), [holdings])
 
+  useEffect(() => {
+    if (symbols.length > 0) preloadStockLogos(symbols)
+  }, [symbols.join(',')])
+
   const { prices, loading: priceLoading } = useFinnhubSocket(symbols)
-  useAlertChecker(prices)
 
   useEffect(() => {
 
@@ -98,55 +85,16 @@ export default function Portfolio() {
 
   const unrealizedPnl = totalValue - totalInvested
 
-  const sellCostBasis = useMemo(
-
-    () => buildSellCostBasisByTxId(transactions),
-
-    [transactions],
-
-  )
-
-
-
-  const txWithPnl = useMemo(
-
-    () =>
-
-      transactions.map((tx) => {
-
-        const pnl = computeRealizedPnl(tx, sellCostBasis)
-
-        return { ...tx, realizedPnl: pnl == null ? null : pnl }
-
-      }),
-
-    [transactions, sellCostBasis],
-
-  )
-
-
-
   const handleSuccess = () => {
-
     refresh()
-
-    refreshTx()
-
     setModal(null)
-
   }
-
-
-
-  const pageLoading = loading || txLoading
-
-
 
   return (
 
     <div className="container pt-6 pb-16 space-y-6">
 
-      {pageLoading ? (
+      {loading ? (
 
         <PageLoader />
 
@@ -501,10 +449,6 @@ export default function Portfolio() {
             </div>
 
           </div>
-
-
-
-          <PnLArea transactions={txWithPnl} />
 
         </>
 

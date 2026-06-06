@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getQuote } from '../../lib/finnhub'
+import { useAuth } from '../../hooks/useAuth'
+import { useWalletBalance } from '../../hooks/useWalletBalance'
 import { pnlToneClass } from '../../lib/portfolioMetrics'
 import { executeBuy, executeSell, fetchWallet } from '../../lib/trading'
 import StockLogo from '../ui/StockLogo'
@@ -24,9 +26,14 @@ export default function BuySellModal({
   onSuccess,
   isFrozen,
 }) {
+  const { user } = useAuth()
+  const { refresh: refreshNavbarBalance } = useWalletBalance()
+  const requireTradeConfirm = user?.user_metadata?.preferences?.trade_confirm !== false
+
   const [quantity, setQuantity] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [showFinalConfirm, setShowFinalConfirm] = useState(false)
   const [quote, setQuote] = useState(null)
   const [quoteLoading, setQuoteLoading] = useState(false)
   const [walletBalance, setWalletBalance] = useState(null)
@@ -38,6 +45,7 @@ export default function BuySellModal({
     if (!open || !sym) return
     setQuantity('')
     setError(null)
+    setShowFinalConfirm(false)
     setQuote(null)
     setWalletBalance(null)
 
@@ -83,6 +91,16 @@ export default function BuySellModal({
     return (livePrice - Number(avgBuyPrice)) * qty
   }, [isBuy, avgBuyPrice, livePrice, qty])
 
+  const handlePrimaryClick = () => {
+    if (requireTradeConfirm && !showFinalConfirm) {
+      if (!canSubmit) return
+      setShowFinalConfirm(true)
+      setError(null)
+      return
+    }
+    handleConfirm()
+  }
+
   const handleConfirm = async () => {
     if (isFrozen) {
       setError('Account is frozen. Trading disabled.')
@@ -104,6 +122,7 @@ export default function BuySellModal({
       }
       setQuantity('')
       onSuccess?.()
+      await refreshNavbarBalance()
       onClose()
     } catch (err) {
       setError(err.message ?? 'Trade failed')
@@ -226,11 +245,26 @@ export default function BuySellModal({
           )}
 
           {error && <p className="text-red-500 text-sm">{error}</p>}
+
+          {showFinalConfirm && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm">
+              <p className="text-amber-200 font-medium">Confirm this trade?</p>
+              <p className="text-gray-400 mt-1">
+                {isBuy ? 'Buy' : 'Sell'} {qty} share{qty !== 1 ? 's' : ''} of {sym} at{' '}
+                {formatMoney(livePrice)} — est. {formatMoney(estimatedTotal)}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3 px-6 py-5 border-t border-gray-600/80">
-          <button type="button" className="secondary-btn flex-1" onClick={onClose} disabled={loading}>
-            Cancel
+          <button
+            type="button"
+            className="secondary-btn flex-1"
+            onClick={() => (showFinalConfirm ? setShowFinalConfirm(false) : onClose())}
+            disabled={loading}
+          >
+            {showFinalConfirm ? 'Go back' : 'Cancel'}
           </button>
           <button
             type="button"
@@ -239,10 +273,18 @@ export default function BuySellModal({
                 ? 'primary-btn'
                 : 'bg-red-500/90 hover:bg-red-500 text-white'
             }`}
-            onClick={handleConfirm}
+            onClick={handlePrimaryClick}
             disabled={!canSubmit}
           >
-            {loading ? 'Processing…' : isBuy ? 'Confirm Buy' : 'Confirm Sell'}
+            {loading
+              ? 'Processing…'
+              : showFinalConfirm
+                ? isBuy
+                  ? 'Yes, buy'
+                  : 'Yes, sell'
+                : isBuy
+                  ? 'Confirm Buy'
+                  : 'Confirm Sell'}
           </button>
         </div>
       </div>

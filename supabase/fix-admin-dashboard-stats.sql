@@ -1,5 +1,36 @@
--- Fix admin analytics: "net flow" was BUY cash out minus SELL cash in (always huge negative).
--- Replace with realized P&L on SELL rows only. Run once in SQL Editor.
+-- Exclude admins from Total Users + fill Daily Signups chart (all 30 days, zeros included).
+-- Run in Supabase SQL Editor after phase11-admin-rpc.sql.
+
+CREATE OR REPLACE FUNCTION public.admin_dashboard_stats()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result jsonb;
+BEGIN
+  PERFORM public.admin_require_admin();
+  SELECT jsonb_build_object(
+    'total_users', (
+      SELECT COUNT(*)::int
+      FROM auth.users u
+      WHERE COALESCE(u.raw_user_meta_data->>'role', 'user') <> 'admin'
+    ),
+    'active_trades_today', (
+      SELECT COUNT(*)::int FROM public.transactions
+      WHERE created_at::date = CURRENT_DATE
+    ),
+    'total_volume', (
+      SELECT COALESCE(SUM(total_value), 0) FROM public.transactions
+    ),
+    'pending_fund_requests', (
+      SELECT COUNT(*)::int FROM public.fund_requests WHERE status = 'pending'
+    )
+  ) INTO result;
+  RETURN result;
+END;
+$$;
 
 CREATE OR REPLACE FUNCTION public.admin_analytics_data()
 RETURNS jsonb
@@ -13,13 +44,24 @@ BEGIN
   PERFORM public.admin_require_admin();
   SELECT jsonb_build_object(
     'daily_signups', (
-      SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::jsonb)
+      SELECT COALESCE(jsonb_agg(row_to_json(t) ORDER BY t.date), '[]'::jsonb)
       FROM (
-        SELECT created_at::date AS date, COUNT(*)::int AS count
-        FROM auth.users
-        WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
-        GROUP BY created_at::date
-        ORDER BY date
+        SELECT
+          d.day::date AS date,
+          COALESCE(s.cnt, 0)::int AS count
+        FROM generate_series(
+          CURRENT_DATE - INTERVAL '29 days',
+          CURRENT_DATE,
+          INTERVAL '1 day'
+        ) AS d(day)
+        LEFT JOIN (
+          SELECT u.created_at::date AS signup_date, COUNT(*)::int AS cnt
+          FROM auth.users u
+          WHERE u.created_at >= CURRENT_DATE - INTERVAL '29 days'
+            AND COALESCE(u.raw_user_meta_data->>'role', 'user') <> 'admin'
+          GROUP BY u.created_at::date
+        ) s ON s.signup_date = d.day::date
+        ORDER BY d.day
       ) t
     ),
     'most_traded', (

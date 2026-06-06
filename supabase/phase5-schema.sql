@@ -213,6 +213,7 @@ CREATE POLICY "portfolios_admin_all" ON public.portfolios
 -- ---------- transactions ----------
 DROP POLICY IF EXISTS "transactions_user_select" ON public.transactions;
 DROP POLICY IF EXISTS "transactions_user_insert" ON public.transactions;
+DROP POLICY IF EXISTS "transactions_user_delete" ON public.transactions;
 DROP POLICY IF EXISTS "transactions_admin_all" ON public.transactions;
 
 CREATE POLICY "transactions_user_select" ON public.transactions
@@ -220,6 +221,9 @@ CREATE POLICY "transactions_user_select" ON public.transactions
 
 CREATE POLICY "transactions_user_insert" ON public.transactions
   FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "transactions_user_delete" ON public.transactions
+  FOR DELETE USING (auth.uid() = user_id);
 
 CREATE POLICY "transactions_admin_all" ON public.transactions
   FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());

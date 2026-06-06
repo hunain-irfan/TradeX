@@ -10,14 +10,52 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { adminDashboardStats, adminAnalyticsData } from '../../lib/admin'
+import { adminDashboardStats, adminAnalyticsData, adminListUsers } from '../../lib/admin'
 import StatCard from '../../components/ui/StatCard'
 import { pnlToneClass } from '../../lib/portfolioMetrics'
 import { PageLoader, PageError, EmptyState } from '../../components/ui/PageState'
 
+const CHART_COLORS = {
+  grid: '#1E1E1E',
+  axis: '#666666',
+  tooltipBg: '#111111',
+  tooltipBorder: '#1E1E1E',
+  line: '#2962FF',
+  bar: '#2962FF',
+}
+
+function formatDateKey(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/** Signups per day — traders only, days with activity (original sparse chart). */
+function buildTraderSignupSeries(users) {
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - 30)
+  cutoff.setHours(0, 0, 0, 0)
+
+  const byDate = new Map()
+  for (const u of users ?? []) {
+    if (u.role === 'admin') continue
+    const created = new Date(u.created_at)
+    if (Number.isNaN(created.getTime()) || created < cutoff) continue
+    const key = formatDateKey(created)
+    byDate.set(key, (byDate.get(key) ?? 0) + 1)
+  }
+
+  return [...byDate.entries()]
+    .map(([date, count]) => ({ date, count }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+}
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null)
   const [analytics, setAnalytics] = useState(null)
+  const [traderCount, setTraderCount] = useState(0)
+  const [signups, setSignups] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -25,9 +63,10 @@ export default function AdminDashboard() {
     setLoading(true)
     setError(null)
 
-    const [statsRes, analyticsRes] = await Promise.all([
+    const [statsRes, analyticsRes, usersRes] = await Promise.all([
       adminDashboardStats(),
       adminAnalyticsData(),
+      adminListUsers(),
     ])
 
     if (statsRes.error) {
@@ -48,6 +87,12 @@ export default function AdminDashboard() {
       )
     } else if (!statsRes.error) {
       setAnalytics(analyticsRes.data)
+    }
+
+    if (!usersRes.error && usersRes.data) {
+      const traders = usersRes.data.filter((u) => u.role !== 'admin')
+      setTraderCount(traders.length)
+      setSignups(buildTraderSignupSeries(usersRes.data))
     }
 
     setLoading(false)
@@ -73,9 +118,12 @@ export default function AdminDashboard() {
     )
   }
 
-  const signups = analytics?.daily_signups ?? []
   const mostTraded = analytics?.most_traded ?? []
-  const topTraders = analytics?.top_traders ?? []
+  const topTraders = [...(analytics?.top_traders ?? [])].sort((a, b) => {
+    const pnlDiff = Number(b.net_flow ?? 0) - Number(a.net_flow ?? 0)
+    if (pnlDiff !== 0) return pnlDiff
+    return Number(b.trades_count ?? 0) - Number(a.trades_count ?? 0)
+  })
   const platformPnl = Number(analytics?.platform_pnl ?? 0)
 
   return (
@@ -83,7 +131,7 @@ export default function AdminDashboard() {
       <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Users" value={stats?.total_users ?? 0} />
+        <StatCard label="Total Users" value={traderCount} />
         <StatCard label="Active Trades Today" value={stats?.active_trades_today ?? 0} />
         <StatCard
           label="Total Platform Volume"
@@ -106,11 +154,24 @@ export default function AdminDashboard() {
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={signups}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2A2F3A" />
-                <XAxis dataKey="date" stroke="#9095A1" tick={{ fontSize: 10 }} />
-                <YAxis stroke="#9095A1" allowDecimals={false} />
-                <Tooltip contentStyle={{ background: '#1A1D23', border: '1px solid #2A2F3A' }} />
-                <Line type="monotone" dataKey="count" stroke="#5865F2" strokeWidth={2} dot={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
+                <XAxis dataKey="date" stroke={CHART_COLORS.axis} tick={{ fontSize: 10, fill: CHART_COLORS.axis }} />
+                <YAxis stroke={CHART_COLORS.axis} tick={{ fill: CHART_COLORS.axis }} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{
+                    background: CHART_COLORS.tooltipBg,
+                    border: `1px solid ${CHART_COLORS.tooltipBorder}`,
+                    borderRadius: 8,
+                    color: '#fff',
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  stroke={CHART_COLORS.line}
+                  strokeWidth={2}
+                  dot={false}
+                />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -123,11 +184,18 @@ export default function AdminDashboard() {
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={mostTraded}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2A2F3A" />
-                <XAxis dataKey="symbol" stroke="#9095A1" tick={{ fontSize: 10 }} />
-                <YAxis stroke="#9095A1" allowDecimals={false} />
-                <Tooltip contentStyle={{ background: '#1A1D23', border: '1px solid #2A2F3A' }} />
-                <Bar dataKey="trades" fill="#7C89FF" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
+                <XAxis dataKey="symbol" stroke={CHART_COLORS.axis} tick={{ fontSize: 10, fill: CHART_COLORS.axis }} />
+                <YAxis stroke={CHART_COLORS.axis} tick={{ fill: CHART_COLORS.axis }} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{
+                    background: CHART_COLORS.tooltipBg,
+                    border: `1px solid ${CHART_COLORS.tooltipBorder}`,
+                    borderRadius: 8,
+                    color: '#fff',
+                  }}
+                />
+                <Bar dataKey="trades" fill={CHART_COLORS.bar} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -135,7 +203,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="dashboard-card">
-        <h2 className="text-white font-semibold mb-4">Top 5 Traders</h2>
+        <h2 className="text-white font-semibold mb-4">Top 5 Traders (by Realized P&L)</h2>
         {topTraders.length === 0 ? (
           <EmptyState title="No traders yet" />
         ) : (

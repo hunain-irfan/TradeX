@@ -106,7 +106,7 @@ BEGIN
         LEFT JOIN public.transactions tr ON tr.user_id = u.id
         WHERE COALESCE(u.raw_user_meta_data->>'role', 'user') <> 'admin'
         GROUP BY u.id, u.email, w.balance
-        ORDER BY w.balance DESC NULLS LAST
+        ORDER BY net_flow DESC NULLS LAST, trades_count DESC, w.balance DESC NULLS LAST
         LIMIT 5
       ) t
     )

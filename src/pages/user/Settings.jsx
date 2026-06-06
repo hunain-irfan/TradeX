@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import PageHeader from '../../components/ui/PageHeader'
+import PasswordInput from '../../components/ui/PasswordInput'
 import {
   Settings as SettingsIcon,
   User,
@@ -250,9 +251,8 @@ export default function Settings() {
             <form onSubmit={handlePasswordSave} className="space-y-4">
               <div>
                 <label className="text-gray-500 text-sm">New password</label>
-                <input
-                  type="password"
-                  className="form-input w-full mt-1"
+                <PasswordInput
+                  className="mt-1"
                   placeholder="At least 6 characters"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -261,9 +261,8 @@ export default function Settings() {
               </div>
               <div>
                 <label className="text-gray-500 text-sm">Confirm password</label>
-                <input
-                  type="password"
-                  className="form-input w-full mt-1"
+                <PasswordInput
+                  className="mt-1"
                   placeholder="Repeat new password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -298,7 +297,7 @@ export default function Settings() {
               />
               <Toggle
                 label="Confirm before trades"
-                description="Show an extra confirmation step on buy/sell (coming soon)."
+                description="Show an extra confirmation step before buy/sell."
                 checked={tradeConfirm}
                 onChange={handleTradeConfirm}
                 disabled={prefsSaving}

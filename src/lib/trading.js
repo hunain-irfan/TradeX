@@ -111,17 +111,23 @@ export async function executeSell({ userId, symbol, stockName, quantity }) {
 
   const newQty = Number(holding.quantity) - qty
   if (newQty <= 0) {
-    await supabase.from('portfolios').delete().eq('id', holding.id)
+    const { error: delErr } = await supabase.from('portfolios').delete().eq('id', holding.id)
+    if (delErr) throw delErr
   } else {
-    await supabase
+    const { error: updErr } = await supabase
       .from('portfolios')
       .update({ quantity: newQty, stock_name: stockName || holding.stock_name })
       .eq('id', holding.id)
+    if (updErr) throw updErr
   }
 
   const balanceAfter = Number(wallet.balance) + totalValue
 
-  await supabase.from('wallets').update({ balance: balanceAfter }).eq('user_id', userId)
+  const { error: walletUpdateErr } = await supabase
+    .from('wallets')
+    .update({ balance: balanceAfter })
+    .eq('user_id', userId)
+  if (walletUpdateErr) throw walletUpdateErr
 
   const costBasis = Number(holding.buy_price)
 

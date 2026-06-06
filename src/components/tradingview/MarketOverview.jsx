@@ -23,7 +23,7 @@ const CONFIG = {
         { name: 'NASDAQ:MSFT', displayName: 'Microsoft' },
         { name: 'NASDAQ:AMZN', displayName: 'Amazon' },
         { name: 'NASDAQ:GOOGL', displayName: 'Alphabet' },
-        { name: 'NASDAQ:META', displayName: 'Meta' },
+        { name: 'NASDAQ:META', displayName: 'Meta Platforms' },
         { name: 'NASDAQ:TSLA', displayName: 'Tesla' },
         { name: 'NASDAQ:AVGO', displayName: 'Broadcom' },
         { name: 'NYSE:BRK.B', displayName: 'Berkshire' },

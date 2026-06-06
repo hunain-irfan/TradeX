@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { getStockName } from '../../data/stocks'
 import StockLogo from './StockLogo'
 
 /**
@@ -15,6 +16,7 @@ export default function StockSymbolCell({
   className = '',
 }) {
   const sym = symbol?.trim().toUpperCase() ?? ''
+  const displayName = getStockName(sym, name)
 
   const inner = (
     <div className={`flex items-center gap-2 min-w-0 ${className}`}>
@@ -23,9 +25,9 @@ export default function StockSymbolCell({
         <span className="font-semibold text-white font-mono text-sm block leading-tight">
           {sym}
         </span>
-        {showName && name && (
+        {showName && displayName && (
           <span className="text-gray-500 text-xs truncate block max-w-[140px] sm:max-w-[200px]">
-            {name}
+            {displayName}
           </span>
         )}
       </div>

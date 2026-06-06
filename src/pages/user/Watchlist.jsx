@@ -3,33 +3,43 @@ import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
 import { useFinnhubSocket } from '../../hooks/useFinnhubSocket'
 import { STOCK_LIST } from '../../data/stocks'
+import { preloadStockLogos } from '../../lib/stockLogo'
 import AdvancedChart from '../../components/tradingview/AdvancedChart'
 import { Plus, Trash2 } from '../../lib/navIcons'
 import StockSymbolCell from '../../components/ui/StockSymbolCell'
 import { PageLoader, PageError, EmptyState } from '../../components/ui/PageState'
+import { useToast } from '../../components/ui/Toast'
 import { pnlToneClass } from '../../lib/portfolioMetrics'
 
 export default function Watchlist() {
   const { user } = useAuth()
+  const { showToast } = useToast()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [loadError, setLoadError] = useState(null)
   const [addSymbol, setAddSymbol] = useState('')
+  const [addError, setAddError] = useState(null)
+  const [adding, setAdding] = useState(false)
   const [chartSymbol, setChartSymbol] = useState(null)
 
   const symbols = items.map((i) => i.stock_symbol)
-  const { prices, connected } = useFinnhubSocket(symbols)
+  const { prices } = useFinnhubSocket(symbols)
+
+  useEffect(() => {
+    if (symbols.length > 0) preloadStockLogos(symbols)
+  }, [symbols.join(',')])
 
   const load = async () => {
     if (!user) return
     setLoading(true)
+    setLoadError(null)
     const { data, error: err } = await supabase
       .from('watchlist')
       .select('*')
       .eq('user_id', user.id)
       .order('added_at', { ascending: false })
 
-    if (err) setError(err.message)
+    if (err) setLoadError(err.message)
     else setItems(data ?? [])
     setLoading(false)
   }
@@ -40,19 +50,42 @@ export default function Watchlist() {
 
   const handleAdd = async (e) => {
     e.preventDefault()
-    const sym = addSymbol.trim().toUpperCase()
-    const stock = STOCK_LIST.find((s) => s.symbol === sym)
-    if (!stock || !user) return
+    setAddError(null)
 
+    const sym = addSymbol.trim().toUpperCase()
+    if (!sym) {
+      setAddError('Enter a stock symbol (e.g. AAPL).')
+      return
+    }
+    if (!user) return
+
+    const stock = STOCK_LIST.find((s) => s.symbol === sym)
+    if (!stock) {
+      setAddError(`"${sym}" is not in our stock list. Open Stocks to browse supported symbols.`)
+      return
+    }
+
+    if (items.some((i) => i.stock_symbol === sym)) {
+      setAddError(`${sym} is already on your watchlist.`)
+      return
+    }
+
+    setAdding(true)
     const { error: err } = await supabase.from('watchlist').insert({
       user_id: user.id,
       stock_symbol: sym,
       stock_name: stock.name,
     })
-    if (!err) {
-      setAddSymbol('')
-      load()
-    } else setError(err.message)
+    setAdding(false)
+
+    if (err) {
+      setAddError(err.message)
+      return
+    }
+
+    setAddSymbol('')
+    showToast(`${sym} added to watchlist`)
+    load()
   }
 
   const handleRemove = async (id) => {
@@ -61,28 +94,38 @@ export default function Watchlist() {
   }
 
   if (loading) return <div className="container pt-6"><PageLoader /></div>
-  if (error) return <div className="container pt-6"><PageError message={error} onRetry={load} /></div>
+  if (loadError) return <div className="container pt-6"><PageError message={loadError} onRetry={load} /></div>
 
   return (
     <div className="container pt-6 pb-10 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Watchlist</h1>
-        <span className="text-gray-500 text-sm">
-          {connected ? 'Live' : 'Connecting...'}
-        </span>
-      </div>
+      <h1 className="text-2xl font-bold text-white">Watchlist</h1>
 
-      <form onSubmit={handleAdd} className="flex gap-3">
-        <input
-          className="search-input flex-1"
-          placeholder="Symbol (e.g. AAPL)"
-          value={addSymbol}
-          onChange={(e) => setAddSymbol(e.target.value)}
-        />
-        <button type="submit" className="primary-btn gap-2">
-          <Plus className="w-4 h-4" strokeWidth={2} aria-hidden />
-          Add
-        </button>
+      <form onSubmit={handleAdd} className="space-y-2">
+        <div className="flex gap-3">
+          <input
+            className="search-input flex-1"
+            placeholder="Symbol (e.g. AAPL)"
+            value={addSymbol}
+            onChange={(e) => {
+              setAddSymbol(e.target.value)
+              if (addError) setAddError(null)
+            }}
+            aria-invalid={addError ? true : undefined}
+            aria-describedby={addError ? 'watchlist-add-error' : undefined}
+          />
+          <button type="submit" className="primary-btn gap-2" disabled={adding}>
+            <Plus className="w-4 h-4" strokeWidth={2} aria-hidden />
+            {adding ? 'Adding…' : 'Add'}
+          </button>
+        </div>
+        {addError && (
+          <p id="watchlist-add-error" className="text-red-500 text-sm">
+            {addError}
+          </p>
+        )}
+        <p className="text-gray-500 text-xs">
+          Supported symbols only (100 US stocks). Browse the Stocks page to pick one.
+        </p>
       </form>
 
       <div className="watchlist-table overflow-x-auto">

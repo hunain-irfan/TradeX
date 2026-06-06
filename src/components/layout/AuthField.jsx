@@ -1,5 +1,8 @@
-export default function AuthField({ label, id, className = '', ...inputProps }) {
+import PasswordInput from '../ui/PasswordInput'
+
+export default function AuthField({ label, id, className = '', type, ...inputProps }) {
   const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
+  const isPassword = type === 'password'
 
   return (
     <div className={className}>
@@ -8,7 +11,11 @@ export default function AuthField({ label, id, className = '', ...inputProps }) 
           {label}
         </label>
       )}
-      <input id={inputId} className="form-input w-full" {...inputProps} />
+      {isPassword ? (
+        <PasswordInput id={inputId} {...inputProps} />
+      ) : (
+        <input id={inputId} type={type} className="form-input w-full" {...inputProps} />
+      )}
     </div>
   )
 }

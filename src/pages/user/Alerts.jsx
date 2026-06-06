@@ -84,7 +84,6 @@ export default function Alerts() {
 
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
 
-            <Bell className="w-6 h-6 text-primary-400" strokeWidth={2} />
 
             Price Alerts
 

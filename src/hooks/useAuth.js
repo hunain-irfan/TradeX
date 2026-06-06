@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { authRedirectUrl, AUTH_PATHS } from '../lib/authRedirect'
-import { getAppHomePath } from '../lib/authPaths'
 
 export function useAuth() {
   const [user, setUser] = useState(null)
@@ -99,16 +98,6 @@ export function useAuth() {
     return { data: result, error }
   }, [user])
 
-  const signInWithGoogle = useCallback(async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: authRedirectUrl(getAppHomePath(false)),
-      },
-    })
-    return { data, error }
-  }, [])
-
   return {
     user,
     session,
@@ -125,6 +114,5 @@ export function useAuth() {
     resendSignupConfirmation,
     updatePassword,
     updateProfile,
-    signInWithGoogle,
   }
 }

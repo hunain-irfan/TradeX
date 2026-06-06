@@ -45,9 +45,10 @@ export default function AdminUsers() {
   }, [])
 
   const filtered = useMemo(() => {
+    const traders = users.filter((u) => u.role !== 'admin')
     const q = search.trim().toLowerCase()
-    if (!q) return users
-    return users.filter((u) => u.email?.toLowerCase().includes(q))
+    if (!q) return traders
+    return traders.filter((u) => u.email?.toLowerCase().includes(q))
   }, [users, search])
 
   const runAction = async (key, fn) => {
@@ -67,13 +68,6 @@ export default function AdminUsers() {
     runAction(`freeze-${u.user_id}`, async () => {
       await adminUpdateUserMetadata(u.user_id, { is_frozen: !u.is_frozen })
       await logAdminAction(u.is_frozen ? 'UNFREEZE_USER' : 'FREEZE_USER', u.user_id)
-    })
-
-  const toggleAdmin = (u) =>
-    runAction(`role-${u.user_id}`, async () => {
-      const newRole = u.role === 'admin' ? 'user' : 'admin'
-      await adminUpdateUserMetadata(u.user_id, { role: newRole })
-      await logAdminAction(newRole === 'admin' ? 'MAKE_ADMIN' : 'REMOVE_ADMIN', u.user_id)
     })
 
   const viewPortfolio = async (u) => {
@@ -131,7 +125,7 @@ export default function AdminUsers() {
         </div>
         {filtered.length === 0 ? (
           <div className="p-8">
-            <EmptyState title="No users found" />
+            <EmptyState title="No traders found" />
           </div>
         ) : (
           filtered.map((u) => {
@@ -147,9 +141,7 @@ export default function AdminUsers() {
                 <span className="flex items-start">
                   <Badge variant={status.variant}>{status.label}</Badge>
                 </span>
-                <span className={u.role === 'admin' ? 'text-gray-500' : 'font-mono'}>
-                  {u.role === 'admin' ? '—' : `$${Number(u.balance).toFixed(2)}`}
-                </span>
+                <span className="font-mono">${Number(u.balance).toFixed(2)}</span>
                 <span>{new Date(u.created_at).toLocaleDateString()}</span>
                 <div className="col-span-2 flex flex-wrap gap-1">
                   <button
@@ -171,28 +163,18 @@ export default function AdminUsers() {
                   <button
                     type="button"
                     className="secondary-btn h-8 px-2 text-xs"
-                    disabled={busy}
-                    onClick={() => toggleAdmin(u)}
-                  >
-                    {u.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
-                  </button>
-                  <button
-                    type="button"
-                    className="secondary-btn h-8 px-2 text-xs"
                     onClick={() => viewPortfolio(u)}
                   >
                     View Portfolio
                   </button>
-                  {u.role !== 'admin' && (
-                    <button
-                      type="button"
-                      className="secondary-btn h-8 px-2 text-xs"
-                      disabled={busy}
-                      onClick={() => handleResetWallet(u)}
-                    >
-                      Reset Wallet
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className="secondary-btn h-8 px-2 text-xs"
+                    disabled={busy}
+                    onClick={() => handleResetWallet(u)}
+                  >
+                    Reset Wallet
+                  </button>
                   <button
                     type="button"
                     className="text-red-500 text-xs px-2 h-8 border border-red-500 rounded-xl hover:bg-red-500/10"

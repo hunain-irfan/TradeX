@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   getLogoCacheStatus,
-  getStockLogoUrl,
+  getStockLogoCandidates,
+  isSvgLogoUrl,
   setLogoCacheStatus,
   stockLogoInitials,
 } from '../../lib/stockLogo'
@@ -13,9 +14,11 @@ function getDisplayDpr() {
 
 export default function StockLogo({ symbol, size = 48, className = '' }) {
   const sym = symbol?.trim().toUpperCase() ?? ''
-  const [variant, setVariant] = useState(0)
-  const [failed, setFailed] = useState(() => getLogoCacheStatus(sym) === false)
-  const [loaded, setLoaded] = useState(() => getLogoCacheStatus(sym) === true)
+  const candidates = useMemo(() => getStockLogoCandidates(sym), [sym])
+  const cachedOk = getLogoCacheStatus(sym) === true
+  const [urlIndex, setUrlIndex] = useState(0)
+  const [failed, setFailed] = useState(false)
+  const [loaded, setLoaded] = useState(cachedOk)
   const [dpr, setDpr] = useState(getDisplayDpr)
 
   const renderSize = useMemo(() => Math.round(size * dpr), [size, dpr])
@@ -25,23 +28,22 @@ export default function StockLogo({ symbol, size = 48, className = '' }) {
   }, [])
 
   useEffect(() => {
-    const status = getLogoCacheStatus(sym)
-    setVariant(0)
-    setFailed(status === false)
-    setLoaded(status === true)
+    setUrlIndex(0)
+    setFailed(false)
+    setLoaded(getLogoCacheStatus(sym) === true)
   }, [sym])
 
-  const url = failed ? '' : getStockLogoUrl(sym, variant)
+  const url = failed ? '' : candidates[urlIndex] ?? ''
   const px = `${size}px`
   const showImg = Boolean(url && !failed)
+  const isSvg = isSvgLogoUrl(url)
 
   const handleError = () => {
-    if (variant < 2 && sym.includes('.')) {
-      setVariant((v) => v + 1)
+    if (urlIndex + 1 < candidates.length) {
+      setUrlIndex((i) => i + 1)
       setLoaded(false)
       return
     }
-    setLogoCacheStatus(sym, false)
     setFailed(true)
     setLoaded(false)
   }
@@ -64,9 +66,9 @@ export default function StockLogo({ symbol, size = 48, className = '' }) {
           height={renderSize}
           loading="lazy"
           decoding="sync"
-          className={`stock-logo-img block h-full w-full object-cover object-center ${
-            loaded ? 'opacity-100' : 'opacity-0'
-          }`}
+          className={`stock-logo-img block h-full w-full ${
+            isSvg ? 'object-contain p-0.5' : 'object-cover object-center'
+          } ${loaded ? 'opacity-100' : 'opacity-0'}`}
           style={{ maxWidth: px, maxHeight: px }}
           onLoad={handleLoad}
           onError={handleError}

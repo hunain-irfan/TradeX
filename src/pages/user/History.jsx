@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useTransactions } from '../../hooks/useTransactions'
+import { useWalletBalance } from '../../hooks/useWalletBalance'
+import { STOCK_LIST } from '../../data/stocks'
 import { Undo2, Download } from '../../lib/navIcons'
 import StockSymbolCell from '../../components/ui/StockSymbolCell'
 import { PageLoader, PageError, EmptyState } from '../../components/ui/PageState'
@@ -44,8 +46,13 @@ function exportCsv(rows) {
   URL.revokeObjectURL(url)
 }
 
+function stockDisplayName(symbol) {
+  return STOCK_LIST.find((s) => s.symbol === symbol)?.name ?? symbol
+}
+
 export default function History() {
   const { transactions, loading, error, undoLast, refresh } = useTransactions()
+  const { refresh: refreshNavbarBalance } = useWalletBalance()
   const [actionFilter, setActionFilter] = useState('ALL')
   const [symbolFilter, setSymbolFilter] = useState('')
   const [dateFrom, setDateFrom] = useState('')
@@ -87,6 +94,7 @@ export default function History() {
     setUndoError(null)
     const { error: err } = await undoLast()
     if (err) setUndoError(err.message)
+    else await refreshNavbarBalance()
     setUndoing(false)
   }
 
@@ -181,7 +189,7 @@ export default function History() {
               <div className="cell-stock min-w-0">
                 <StockSymbolCell
                   symbol={tx.stock_symbol}
-                  name={tx.stock_name}
+                  name={stockDisplayName(tx.stock_symbol)}
                   showName={false}
                 />
               </div>

@@ -158,6 +158,13 @@ const TRADINGVIEW_SYMBOL_OVERRIDES = {
   'BRK.B': 'NYSE:BRK.B',
 }
 
+/** Canonical company name for a symbol (falls back to provided name or symbol). */
+export function getStockName(symbol, fallback = '') {
+  const sym = symbol?.trim().toUpperCase()
+  if (!sym) return fallback || ''
+  return STOCK_LIST.find((s) => s.symbol === sym)?.name ?? (fallback || sym)
+}
+
 /** TradingView symbol id, e.g. V → NYSE:V */
 export function toTradingViewSymbol(symbol) {
   if (!symbol) return ''

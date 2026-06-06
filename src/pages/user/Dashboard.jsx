@@ -20,7 +20,6 @@ import {
   pnlToneClass,
 } from '../../lib/portfolioMetrics'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue'
-import { useAlertChecker } from '../../hooks/useAlertChecker'
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -40,8 +39,6 @@ export default function Dashboard() {
       updateLivePrices(prices)
     }
   }, [prices, updateLivePrices])
-
-  useAlertChecker(prices)
 
   useEffect(() => {
     if (!user) return
