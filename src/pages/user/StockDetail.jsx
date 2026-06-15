@@ -33,13 +33,13 @@ import { PageLoader, PageError, EmptyState } from '../../components/ui/PageState
 
 const SYMBOL_INFO_HEIGHT = 178
 
-const CHART_HEIGHT = 535
+const CHART_HEIGHT = 585
 
 const SIDEBAR_TV_HEIGHT = 460
 
 /** News card — same slot as former Company Profile on sidebar */
 
-const NEWS_FEED_HEIGHT = 440
+const NEWS_FEED_HEIGHT = 432
 
 /** Company Profile — below chart on the left */
 
@@ -194,7 +194,7 @@ export default function StockDetail() {
 
         <div className="w-full lg:w-[64%] shrink-0 flex flex-col gap-6">
 
-          <div className="bg-[#111111] p-4 border border-[3px] border-[#1E1E1E] rounded-lg overflow-hidden relative shrink-0">
+          <div className="bg-[#111111] p-4 border border-[2px] border-[#1E1E1E] rounded-lg overflow-hidden relative shrink-0">
 
             <SymbolInfo symbol={symbol} height={SYMBOL_INFO_HEIGHT} />
 
@@ -231,14 +231,14 @@ export default function StockDetail() {
 
         <div className="w-full lg:w-[34.5%] shrink-0 flex flex-col gap-6">
 
-          <div className="bg-[#111111] border border-[3px] border-[#1E1E1E] rounded-lg p-5 space-y-3 shrink-0 border-[3px]">
+          <div className="bg-[#111111] border border-[2px] border-[#1E1E1E] rounded-lg p-5 space-y-3 shrink-0">
 
             <button
 
               type="button"
 
               className="primary-btn w-full font-bold !h-12 tracking-wider uppercase !text-[12px]"
-         
+
 
               onClick={() => setModal({ mode: 'buy' })}
 
@@ -277,7 +277,7 @@ export default function StockDetail() {
 
 
 
-          <div className="bg-[#111111] border border-[#1E1E1E] rounded-lg overflow-hidden shrink-0">
+          <div className="bg-[#111111]  rounded-lg overflow-hidden shrink-0">
 
             <FundamentalData symbol={symbol} height={SIDEBAR_TV_HEIGHT} />
 
@@ -287,7 +287,7 @@ export default function StockDetail() {
 
           <div
 
-            className="bg-[#111111] border border-[#1E1E1E] border-[3px] rounded-lg p-5 flex flex-col overflow-hidden shrink-0"
+            className="bg-[#111111] border border-[#1E1E1E] border-[2px] rounded-lg p-5 flex flex-col overflow-hidden shrink-0"
 
             style={{ height: NEWS_FEED_HEIGHT, minHeight: NEWS_FEED_HEIGHT }}
 
